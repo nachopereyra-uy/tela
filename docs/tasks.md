@@ -58,4 +58,4 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 - [x] **T7.1 — Exportar JSON.** Descargar el proyecto activo. *Hecho cuando:* el archivo contiene notas y conexiones.
 - [x] **T7.2 — Importar JSON.** Subir un JSON (incluye formato del prototipo) como proyecto nuevo. *Hecho cuando:* un export del prototipo se importa sin pérdida.
 - [x] **T7.3 — Búsqueda y modo Presentar.** Búsqueda por título/etiqueta y toggle que oculta el cromo. *Hecho cuando:* funcionan en todas las vistas.
-- [ ] **T7.4 — Despliegue en Vercel.** Conectar repo, variables y desplegar. *Hecho cuando:* la app está en una URL pública con Supabase.
+- [x] **T7.4 — Despliegue en Vercel.** Conectar repo, variables y desplegar. *Hecho cuando:* la app está en una URL pública con Supabase.
