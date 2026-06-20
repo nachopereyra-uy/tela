@@ -79,24 +79,12 @@ function IconDocs({ active }: { active: boolean }) {
     </svg>
   );
 }
-function IconGraph({ active }: { active: boolean }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="3" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" />
-      <circle cx="3" cy="13" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" />
-      <circle cx="13" cy="13" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" />
-      <path d="M6.5 4.5L4.5 11.5M9.5 4.5L11.5 11.5M5 13h6" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-const VIEWS: View[] = ["funnel", "canvas", "board", "documents", "graph"];
+const VIEWS: View[] = ["funnel", "canvas", "board", "documents"];
 const VIEW_LABELS: Record<View, string> = {
   funnel: "Embudo",
   canvas: "Lienzo",
   board: "Tablero",
   documents: "Documentos",
-  graph: "Grafo",
 };
 
 function getInitial(name: string) {
@@ -140,7 +128,6 @@ function GlobalSidebar({
     canvas: IconCanvas,
     board: IconBoard,
     documents: IconDocs,
-    graph: IconGraph,
   };
 
   return (
@@ -369,7 +356,7 @@ export function GlobalShell({
     if (!currentProjectId) return;
     try {
       const stored = localStorage.getItem(`tela:view:${currentProjectId}`);
-      if (stored && ["funnel", "canvas", "board", "documents", "graph"].includes(stored)) {
+      if (stored && ["funnel", "canvas", "board", "documents"].includes(stored)) {
         setActiveView(stored as View);
       } else {
         setActiveView("funnel");

@@ -1,1 +1,1 @@
-export type View = "funnel" | "canvas" | "board" | "documents" | "graph";
+export type View = "funnel" | "canvas" | "board" | "documents";

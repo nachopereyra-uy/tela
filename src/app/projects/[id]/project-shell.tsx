@@ -6,7 +6,6 @@ import {
   backlinks,
   findByTitle,
   outgoingLinks,
-  wikilinkEdges,
   type NoteLayer,
   type NoteStatus,
   type Note,
@@ -14,7 +13,6 @@ import {
 import { BoardView } from "./board-view";
 import { CanvasView } from "./canvas-view";
 import { FunnelView } from "./funnel-view";
-import { GraphView } from "./graph-view";
 import { DocumentsView } from "./documents-view";
 import { NoteInspector } from "./note-inspector";
 import { useProjectContext } from "../global-shell";
@@ -47,7 +45,7 @@ export type ShellProject = {
 export type { View } from "../view-types";
 import type { View } from "../view-types";
 
-const VALID_VIEWS: View[] = ["funnel", "canvas", "board", "documents", "graph"];
+const VALID_VIEWS: View[] = ["funnel", "canvas", "board", "documents"];
 
 type ProjectShellProps = {
   project: ShellProject;
@@ -69,35 +67,25 @@ const VIEW_LABELS: Record<View, string> = {
   canvas: "Lienzo",
   board: "Tablero",
   documents: "Documentos",
-  graph: "Grafo",
 };
 
 function IconFunnel({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M2 3h12l-4.5 5v4l-3-1.5V8L2 3z"
-        stroke={active ? "var(--blue)" : "currentColor"}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        fill="none"
-      />
+      <path d="M2 3h12l-4.5 5v4l-3-1.5V8L2 3z" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinejoin="round" fill="none" />
     </svg>
   );
 }
-
 function IconCanvas({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <rect x="2" y="2" width="5" height="5" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
       <rect x="9" y="2" width="5" height="5" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
       <rect x="2" y="9" width="5" height="5" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
-      <path d="M9 11.5h5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M11.5 9v5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M9 11.5h5M11.5 9v5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
-
 function IconBoard({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -107,23 +95,11 @@ function IconBoard({ active }: { active: boolean }) {
     </svg>
   );
 }
-
 function IconDocs({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
       <path d="M5.5 5h5M5.5 7.5h5M5.5 10h3" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconGraph({ active }: { active: boolean }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="3" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
-      <circle cx="3" cy="13" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
-      <circle cx="13" cy="13" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
-      <path d="M6.5 4.5L4.5 11.5M9.5 4.5L11.5 11.5M5 13h6" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -248,10 +224,6 @@ export function ProjectShell({
         : [],
     [selectedCoreNote, coreNotes],
   );
-  const computedWikilinkEdges = useMemo(
-    () => wikilinkEdges(coreNotes),
-    [coreNotes],
-  );
   const wikilinkTargets = useMemo(
     () => localNotes.map((n) => ({ id: n.id, title: n.title })),
     [localNotes],
@@ -286,7 +258,6 @@ export function ProjectShell({
     canvas: <IconCanvas active />,
     board: <IconBoard active />,
     documents: <IconDocs active />,
-    graph: <IconGraph active />,
   };
 
   return (
@@ -349,19 +320,6 @@ export function ProjectShell({
             wikilinkTargets={wikilinkTargets}
           />
         )}
-        {activeView === "graph" && (
-          <GraphView
-            notes={localNotes}
-            explicitEdges={localEdges}
-            wikilinkEdges={computedWikilinkEdges}
-            projectId={project.id}
-            onNoteSelect={(id) => {
-              setActiveView("documents");
-              handleNoteSelect(id);
-            }}
-          />
-        )}
-
         {/* Inspector overlay (slide from right) */}
         <NoteInspector
           note={selectedNote}

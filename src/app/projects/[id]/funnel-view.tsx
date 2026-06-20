@@ -93,7 +93,42 @@ export function FunnelView({ notes, presentMode, projectId, onNoteSelect }: Funn
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <div className="h-full overflow-y-auto px-6 py-6">
+      <div className="h-full overflow-y-auto px-6 py-4">
+        {/* Horizontal layer progress indicator */}
+        <div className="mb-4 flex items-center gap-0 rounded-card border border-line bg-card px-3 py-2.5 shadow-card">
+          {LAYERS.map((layer, i) => {
+            const count = notesByLayer.get(layer.id)?.length ?? 0;
+            const color = LAYER_COLORS[layer.id] ?? 'var(--line)';
+            const active = count > 0;
+            return (
+              <div key={layer.id} className="flex flex-1 items-center">
+                <div className="flex flex-col items-center gap-1">
+                  <div
+                    title={`${layer.name}: ${count} nota${count !== 1 ? "s" : ""}`}
+                    className="h-3 w-3 rounded-full border-2 transition-all"
+                    style={{
+                      borderColor: color,
+                      background: active ? color : 'transparent',
+                    }}
+                  />
+                  <span
+                    className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap"
+                    style={{ color: active ? color : 'var(--ink-faint)' }}
+                  >
+                    {layer.name}
+                  </span>
+                </div>
+                {i < LAYERS.length - 1 && (
+                  <div
+                    className="flex-1 h-0.5 mx-1"
+                    style={{ background: (notesByLayer.get(layer.id)?.length ?? 0) > 0 ? color : 'var(--line)' }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         <div className="flex gap-3">
           {/* Vertical spine */}
           <div className="flex flex-col items-center" style={{ width: 40 }}>

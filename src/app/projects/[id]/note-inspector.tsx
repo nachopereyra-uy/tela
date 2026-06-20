@@ -110,14 +110,15 @@ export function NoteInspector({
     return () => { deleteRef.current = null; };
   }, [deleteRef]);
 
-  // Refresh RSC data after successful save
+  // Refresh RSC data after successful save, then close inspector
   const prevUpdatePending = useRef(false);
   useEffect(() => {
     if (prevUpdatePending.current && !updatePending && !updateState.error) {
       router.refresh();
+      onClose();
     }
     prevUpdatePending.current = updatePending;
-  }, [updatePending, updateState.error, router]);
+  }, [updatePending, updateState.error, router, onClose]);
 
   const prevDeletePending = useRef(false);
   useEffect(() => {

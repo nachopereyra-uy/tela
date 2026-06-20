@@ -28,10 +28,9 @@ const VIEW_LABELS: Record<View, string> = {
   canvas: "Lienzo",
   board: "Tablero",
   documents: "Documentos",
-  graph: "Grafo",
 };
 
-const VIEWS: View[] = ["funnel", "canvas", "board", "documents", "graph"];
+const VIEWS: View[] = ["funnel", "canvas", "board", "documents"];
 
 function getInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || "?";
