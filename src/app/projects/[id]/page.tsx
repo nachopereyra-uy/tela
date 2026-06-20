@@ -13,6 +13,7 @@ import { listNotes } from "@/server/notes";
 import { getProject } from "@/server/projects";
 import { createNoteAction } from "./actions";
 import { BoardView } from "./board-view";
+import { CanvasView } from "./canvas-view";
 import { FunnelView } from "./funnel-view";
 import { NoteInspector, type InspectorNote } from "./note-inspector";
 
@@ -150,6 +151,7 @@ export default async function ProjectPage({
         )}
         <FunnelView notes={notes} projectId={project.id} />
         <BoardView notes={notes} projectId={project.id} />
+        <CanvasView notes={notes} projectId={project.id} />
       </section>
       <NoteInspector
         backlinks={selectedBacklinks}

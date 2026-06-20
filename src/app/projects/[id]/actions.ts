@@ -38,6 +38,13 @@ const moveNoteStatusSchema = z.object({
   status: z.enum(NOTE_STATUSES),
 });
 
+const moveNotePositionSchema = z.object({
+  projectId: z.string().uuid(),
+  noteId: z.string().uuid(),
+  x: z.number().int(),
+  y: z.number().int(),
+});
+
 async function getCurrentUserId() {
   const supabase = await createClient();
   const {
@@ -202,6 +209,26 @@ export async function moveNoteStatusAction(input: {
   const parsed = moveNoteStatusSchema.parse(input);
   const note = await updateNote(userId, parsed.projectId, parsed.noteId, {
     status: parsed.status,
+  });
+
+  if (!note) {
+    throw new Error("No pudimos mover la nota.");
+  }
+
+  revalidatePath(`/projects/${parsed.projectId}`);
+}
+
+export async function moveNotePositionAction(input: {
+  projectId: string;
+  noteId: string;
+  x: number;
+  y: number;
+}) {
+  const userId = await getCurrentUserId();
+  const parsed = moveNotePositionSchema.parse(input);
+  const note = await updateNote(userId, parsed.projectId, parsed.noteId, {
+    x: parsed.x,
+    y: parsed.y,
   });
 
   if (!note) {
