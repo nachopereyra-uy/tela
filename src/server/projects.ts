@@ -30,6 +30,19 @@ export async function listProjects(userId: string) {
     .orderBy(projects.createdAt);
 }
 
+export async function getProject(userId: string, projectId: string) {
+  const ownerId = projectIdSchema.parse(userId);
+  const id = projectIdSchema.parse(projectId);
+
+  const [project] = await db
+    .select()
+    .from(projects)
+    .where(and(eq(projects.id, id), eq(projects.ownerId, ownerId)))
+    .limit(1);
+
+  return project ?? null;
+}
+
 export async function createProject(
   userId: string,
   input: z.input<typeof projectInputSchema>,
