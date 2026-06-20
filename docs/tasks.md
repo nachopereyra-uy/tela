@@ -17,7 +17,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 
 - [x] **T1.1 — Login y registro.** Formularios email + contraseña con Supabase Auth. *Hecho cuando:* un usuario puede registrarse e iniciar sesión.
 - [x] **T1.2 — Cerrar sesión.** Logout que limpia sesión y redirige a `/login`. *Hecho cuando:* se pierde el acceso a rutas protegidas.
-- [ ] **T1.3 — Middleware de sesión.** Refrescar sesión y proteger rutas privadas. *Hecho cuando:* entrar a `/projects` sin sesión redirige a login.
+- [x] **T1.3 — Middleware de sesión.** Refrescar sesión y proteger rutas privadas. *Hecho cuando:* entrar a `/projects` sin sesión redirige a login.
 - [ ] **T1.4 — Datos de proyectos.** `listProjects`, `createProject`, `renameProject`, `deleteProject` filtrando por `owner_id`. *Hecho cuando:* solo se devuelven proyectos del usuario actual.
 - [ ] **T1.5 — Pantalla de proyectos.** `/projects` con lista y diálogo de creación; el proyecto nace vacío. *Hecho cuando:* crear un proyecto lo muestra y lleva a `/projects/[id]`.
 - [ ] **T1.6 — Renombrar y eliminar.** Acciones con diálogo de confirmación propio. *Hecho cuando:* persisten.
