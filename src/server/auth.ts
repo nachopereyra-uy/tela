@@ -77,7 +77,7 @@ export async function signUp(
   });
 
   if (error) {
-    return { error: "No pudimos crear la cuenta con esos datos." };
+    return { error: error.message };
   }
 
   if (data.session) {
