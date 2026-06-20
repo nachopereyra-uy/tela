@@ -20,6 +20,7 @@ type FunnelViewProps = {
   notes: FunnelNote[];
   presentMode?: boolean;
   projectId: string;
+  onNoteSelect?: (id: string) => void;
 };
 
 const LAYER_COLORS: Record<string, string> = {
@@ -33,7 +34,7 @@ const LAYER_COLORS: Record<string, string> = {
 
 const LAYER_GRADIENT = `linear-gradient(to bottom, var(--l-marketing), var(--l-ventas), var(--l-cierre), var(--l-onboarding), var(--l-entrega), var(--l-posventa))`;
 
-export function FunnelView({ notes, presentMode, projectId }: FunnelViewProps) {
+export function FunnelView({ notes, presentMode, projectId, onNoteSelect }: FunnelViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
   const notesByLayer = useMemo(() => {
@@ -87,15 +88,7 @@ export function FunnelView({ notes, presentMode, projectId }: FunnelViewProps) {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <section className="border-t border-line py-8">
-        {!presentMode && (
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold text-ink">Embudo</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              Las seis capas del negocio con sus notas asignadas.
-            </p>
-          </div>
-        )}
+      <div className="h-full overflow-y-auto px-6 py-6">
         <div className="flex gap-3">
           {/* Vertical spine */}
           <div className="flex flex-col items-center" style={{ width: 40 }}>
@@ -113,11 +106,12 @@ export function FunnelView({ notes, presentMode, projectId }: FunnelViewProps) {
                 notes={notesByLayer.get(layer.id) ?? []}
                 presentMode={presentMode}
                 projectId={projectId}
+                onNoteSelect={onNoteSelect}
               />
             ))}
           </div>
         </div>
-      </section>
+      </div>
     </DndContext>
   );
 }
@@ -127,9 +121,10 @@ type FunnelLayerProps = {
   notes: FunnelNote[];
   presentMode?: boolean;
   projectId: string;
+  onNoteSelect?: (id: string) => void;
 };
 
-function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps) {
+function FunnelLayer({ layer, notes, presentMode, projectId, onNoteSelect }: FunnelLayerProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: layer.id,
   });
@@ -188,7 +183,7 @@ function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps)
       )}
       <ul className="mt-4 grid min-h-14 gap-2">
         {notes.map((note) => (
-          <DraggableFunnelNote key={note.id} note={note} projectId={projectId} layerColor={layerColor} />
+          <DraggableFunnelNote key={note.id} note={note} projectId={projectId} layerColor={layerColor} onNoteSelect={onNoteSelect} />
         ))}
       </ul>
     </section>
@@ -199,10 +194,12 @@ function DraggableFunnelNote({
   note,
   projectId,
   layerColor,
+  onNoteSelect,
 }: {
   note: FunnelNote;
   projectId: string;
   layerColor: string;
+  onNoteSelect?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -236,6 +233,7 @@ function DraggableFunnelNote({
           <a
             className="min-w-0 flex-1 truncate text-sm font-medium text-ink transition hover:text-blue"
             href={`/projects/${projectId}?note=${note.id}`}
+            onClick={(e) => { e.preventDefault(); onNoteSelect?.(note.id); }}
           >
             {note.title}
           </a>

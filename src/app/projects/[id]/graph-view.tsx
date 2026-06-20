@@ -35,6 +35,7 @@ type GraphViewProps = {
   presentMode?: boolean;
   projectId: string;
   wikilinkEdges: WikilinkGraphEdge[];
+  onNoteSelect?: (id: string) => void;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -51,6 +52,7 @@ export function GraphView({
   presentMode,
   projectId,
   wikilinkEdges,
+  onNoteSelect,
 }: GraphViewProps) {
   const nodes: Node[] = useMemo(() => {
     const radius = Math.max(180, notes.length * 34);
@@ -100,20 +102,16 @@ export function GraphView({
   );
 
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
-    window.location.href = `/projects/${projectId}?note=${node.id}`;
+    if (onNoteSelect) {
+      onNoteSelect(node.id);
+    } else {
+      window.location.href = `/projects/${projectId}?note=${node.id}`;
+    }
   };
 
   return (
-    <section className="border-t border-line py-8">
-      {!presentMode && (
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold text-ink">Grafo</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Conexiones explícitas y enlaces de documentos.
-          </p>
-        </div>
-      )}
-      <div className={`overflow-hidden rounded-card border border-line ${presentMode ? "h-[80vh]" : "h-[520px]"}`}>
+    <div className="h-full">
+      <div className="h-full overflow-hidden">
         <ReactFlow
           edges={edges}
           fitView
@@ -126,6 +124,6 @@ export function GraphView({
           <Controls />
         </ReactFlow>
       </div>
-    </section>
+    </div>
   );
 }

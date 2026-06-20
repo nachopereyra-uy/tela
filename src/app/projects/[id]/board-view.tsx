@@ -8,7 +8,7 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 import { NOTE_STATUSES, type NoteStatus } from "@/core";
-import { moveNoteStatusAction } from "./actions";
+import { createNoteInStatusAction, moveNoteStatusAction } from "./actions";
 
 type BoardNote = {
   id: string;
@@ -21,6 +21,7 @@ type BoardViewProps = {
   notes: BoardNote[];
   presentMode?: boolean;
   projectId: string;
+  onNoteSelect?: (id: string) => void;
 };
 
 const statusLabels: Record<NoteStatus, string> = {
@@ -39,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   none: 'var(--ink-faint)',
 };
 
-export function BoardView({ notes, presentMode, projectId }: BoardViewProps) {
+export function BoardView({ notes, presentMode, projectId, onNoteSelect }: BoardViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
   const notesByStatus = useMemo(() => {
@@ -89,15 +90,7 @@ export function BoardView({ notes, presentMode, projectId }: BoardViewProps) {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <section className="border-t border-line py-8">
-        {!presentMode && (
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold text-ink">Tablero</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              Las notas agrupadas por estado.
-            </p>
-          </div>
-        )}
+      <div className="h-full overflow-y-auto px-4 py-4">
         <div className="grid gap-3 xl:grid-cols-5">
           {NOTE_STATUSES.map((status) => (
             <BoardColumn
@@ -105,10 +98,11 @@ export function BoardView({ notes, presentMode, projectId }: BoardViewProps) {
               notes={notesByStatus.get(status) ?? []}
               projectId={projectId}
               status={status}
+              onNoteSelect={onNoteSelect}
             />
           ))}
         </div>
-      </section>
+      </div>
     </DndContext>
   );
 }
@@ -117,9 +111,10 @@ type BoardColumnProps = {
   notes: BoardNote[];
   projectId: string;
   status: NoteStatus;
+  onNoteSelect?: (id: string) => void;
 };
 
-function BoardColumn({ notes, projectId, status }: BoardColumnProps) {
+function BoardColumn({ notes, projectId, status, onNoteSelect }: BoardColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: status,
   });
@@ -145,9 +140,19 @@ function BoardColumn({ notes, projectId, status }: BoardColumnProps) {
       </div>
       <ul className="grid gap-2">
         {notes.map((note) => (
-          <DraggableBoardNote key={note.id} note={note} projectId={projectId} />
+          <DraggableBoardNote key={note.id} note={note} projectId={projectId} onNoteSelect={onNoteSelect} />
         ))}
       </ul>
+      <form action={createNoteInStatusAction} className="mt-2">
+        <input type="hidden" name="projectId" value={projectId} />
+        <input type="hidden" name="status" value={status} />
+        <button
+          type="submit"
+          className="w-full h-8 rounded-btn border border-line bg-paper px-3 text-sm text-ink-soft hover:bg-card hover:text-ink transition"
+        >
+          + Añadir nota
+        </button>
+      </form>
     </section>
   );
 }
@@ -155,9 +160,11 @@ function BoardColumn({ notes, projectId, status }: BoardColumnProps) {
 function DraggableBoardNote({
   note,
   projectId,
+  onNoteSelect,
 }: {
   note: BoardNote;
   projectId: string;
+  onNoteSelect?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -188,6 +195,7 @@ function DraggableBoardNote({
           <a
             className="min-w-0 flex-1 transition hover:text-blue"
             href={`/projects/${projectId}?note=${note.id}`}
+            onClick={(e) => { e.preventDefault(); onNoteSelect?.(note.id); }}
           >
             <span className="block truncate text-sm font-medium text-ink">
               {note.title}

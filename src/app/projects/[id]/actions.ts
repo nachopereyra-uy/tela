@@ -191,7 +191,39 @@ export async function deleteNoteAction(
   }
 
   revalidatePath(`/projects/${parsed.data.projectId}`);
-  redirect(`/projects/${parsed.data.projectId}`);
+  return {};  // No redirect — caller handles UI update
+}
+
+export async function createNoteInStatusAction(formData: FormData) {
+  const userId = await getCurrentUserId();
+  const projectId = z.string().uuid().parse(formData.get("projectId"));
+  const status = z.enum(NOTE_STATUSES).parse(formData.get("status"));
+  const note = await createNote(userId, projectId, {
+    title: "Sin titulo",
+    status,
+  });
+  if (!note) {
+    redirect(`/projects/${projectId}`);
+  }
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}?note=${note.id}`);
+}
+
+export async function createNoteAtPositionAction(formData: FormData) {
+  const userId = await getCurrentUserId();
+  const projectId = z.string().uuid().parse(formData.get("projectId"));
+  const x = z.coerce.number().int().parse(formData.get("x"));
+  const y = z.coerce.number().int().parse(formData.get("y"));
+  const note = await createNote(userId, projectId, {
+    title: "Sin titulo",
+    x,
+    y,
+  });
+  if (!note) {
+    redirect(`/projects/${projectId}`);
+  }
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}?note=${note.id}`);
 }
 
 export async function moveNoteLayerAction(input: {

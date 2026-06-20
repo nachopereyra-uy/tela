@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { LAYERS, markdownToHtml, NOTE_LAYERS, NOTE_STATUSES } from "@/core";
+import type { ShellNote } from "./project-shell";
 import {
   createNoteFromWikilinkAction,
   deleteNoteAction,
@@ -26,19 +27,16 @@ export type InspectorNote = {
 
 type NoteInspectorProps = {
   projectId: string;
-  note: InspectorNote | null;
-  wikilinkTargets: Array<{
-    id: string;
-    title: string;
-  }>;
-  outgoingLinks: Array<{
-    title: string;
-    noteId: string | null;
-  }>;
-  backlinks: Array<{
-    id: string;
-    title: string;
-  }>;
+  note: ShellNote | null;
+  wikilinkTargets: Array<{ id: string; title: string }>;
+  outgoingLinks: Array<{ title: string; noteId: string | null }>;
+  backlinks: Array<{ id: string; title: string }>;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdate: (noteId: string, changes: Partial<ShellNote>) => void;
+  onDeleted: (noteId: string) => void;
+  onNoteNavigate: (noteId: string) => void;
+  deleteRef: React.MutableRefObject<(() => void) | null>;
 };
 
 const initialState: NoteActionState = {};
@@ -51,10 +49,22 @@ const statusLabels: Record<string, string> = {
   none: "Sin estado",
 };
 
-const layerLabels = new Map<string, string>([
-  ...LAYERS.map((layer) => [layer.id, layer.name] as const),
-  ["none", "Sin capa"],
-]);
+const STATUS_COLORS: Record<string, string> = {
+  todo: "var(--todo)",
+  doing: "var(--doing)",
+  done: "var(--done)",
+  idea: "var(--idea)",
+  none: "var(--ink-faint)",
+};
+
+const LAYER_COLORS: Record<string, string> = {
+  marketing: "var(--l-marketing)",
+  ventas: "var(--l-ventas)",
+  cierre: "var(--l-cierre)",
+  onboarding: "var(--l-onboarding)",
+  entrega: "var(--l-entrega)",
+  posventa: "var(--l-posventa)",
+};
 
 function normalizeTitle(title: string) {
   return title.trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -66,6 +76,12 @@ export function NoteInspector({
   projectId,
   note,
   wikilinkTargets,
+  isOpen,
+  onClose,
+  onUpdate,
+  onDeleted,
+  onNoteNavigate,
+  deleteRef,
 }: NoteInspectorProps) {
   const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const [content, setContent] = useState(note?.content ?? "");
@@ -84,282 +100,368 @@ export function NoteInspector({
     setMissingWikilink(null);
   }, [note?.content, note?.id]);
 
+  // Expose delete trigger to parent (keyboard shortcut)
+  useEffect(() => {
+    deleteRef.current = () => deleteDialogRef.current?.showModal();
+    return () => { deleteRef.current = null; };
+  }, [deleteRef]);
+
+  // After successful delete, notify parent
+  const prevDeletePending = useRef(false);
+  useEffect(() => {
+    if (prevDeletePending.current && !deletePending && !deleteState.error && note) {
+      onDeleted(note.id);
+    }
+    prevDeletePending.current = deletePending;
+  }, [deletePending, deleteState.error, note, onDeleted]);
+
   function handlePreviewClick(event: MouseEvent<HTMLDivElement>) {
     const target = event.target;
-
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
+    if (!(target instanceof HTMLElement)) return;
     const link = target.closest("[data-wikilink]");
-
-    if (!(link instanceof HTMLElement)) {
-      return;
-    }
-
+    if (!(link instanceof HTMLElement)) return;
     event.preventDefault();
     const title = link.dataset.wikilink;
-
-    if (!title) {
-      return;
-    }
-
+    if (!title) return;
     const existingNote = wikilinkTargets.find(
-      (targetNote) => normalizeTitle(targetNote.title) === normalizeTitle(title),
+      (t) => normalizeTitle(t.title) === normalizeTitle(title),
     );
-
     if (existingNote) {
-      window.location.href = `/projects/${projectId}?note=${existingNote.id}`;
+      onNoteNavigate(existingNote.id);
       return;
     }
-
     setMissingWikilink(title);
   }
 
-  if (!note) {
-    return (
-      <aside className="border-l border-line bg-paper overflow-y-auto">
-        <div className="sticky top-0 bg-paper/90 backdrop-blur-sm border-b border-line px-6 py-4">
-          <h2 className="text-base font-semibold text-ink">Inspector</h2>
-        </div>
-        <div className="px-6 py-6">
-          <p className="text-sm text-ink-soft">
-            Crea o selecciona una nota para editarla.
-          </p>
-        </div>
-      </aside>
-    );
-  }
-
   return (
-    <aside className="border-l border-line bg-paper overflow-y-auto">
-      <div className="sticky top-0 bg-paper/90 backdrop-blur-sm border-b border-line px-6 py-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-ink">Inspector</h2>
-        <button
-          className="h-8 rounded-btn border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50"
-          onClick={() => deleteDialogRef.current?.showModal()}
-          type="button"
-        >
-          Eliminar
-        </button>
-      </div>
+    <>
+      {/* Backdrop (click to close) */}
+      {isOpen && (
+        <div
+          className="absolute inset-0 z-30"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      <form action={updateFormAction} className="grid gap-5 px-6 py-6">
-        <input name="projectId" type="hidden" value={projectId} />
-        <input name="noteId" type="hidden" value={note.id} />
-
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-ink" htmlFor="title">
-            Título
-          </label>
-          <input
-            className="h-10 rounded-btn border border-line bg-paper px-3 text-base text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
-            defaultValue={note.title}
-            id="title"
-            maxLength={200}
-            name="title"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium text-ink" htmlFor="layer">
-              Capa
-            </label>
-            <select
-              className="h-10 rounded-btn border border-line bg-paper px-3 text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
-              defaultValue={note.layer}
-              id="layer"
-              name="layer"
-            >
-              {NOTE_LAYERS.map((layer) => (
-                <option key={layer} value={layer}>
-                  {layerLabels.get(layer)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium text-ink" htmlFor="status">
-              Estado
-            </label>
-            <select
-              className="h-10 rounded-btn border border-line bg-paper px-3 text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
-              defaultValue={note.status}
-              id="status"
-              name="status"
-            >
-              {NOTE_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {statusLabels[status]}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-ink" htmlFor="content">
-            Contenido
-          </label>
-          <textarea
-            className="min-h-56 rounded-btn border border-line bg-[#FCFBF8] px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
-            defaultValue={note.content}
-            id="content"
-            name="content"
-            onChange={(event) => setContent(event.target.value)}
-          />
-        </div>
-        <div className="grid gap-2">
-          <h3 className="text-sm font-medium text-ink">Vista previa</h3>
-          <div
-            className="rounded-card border border-line bg-[#FCFBF8] px-4 py-3 text-sm leading-6 text-ink [&_[data-wikilink]]:text-blue [&_[data-wikilink]]:underline [&_[data-wikilink]]:decoration-blue/30 [&_a]:font-medium [&_a]:text-blue [&_code]:rounded [&_code]:bg-card [&_code]:px-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-auto [&_pre]:rounded-card [&_pre]:bg-card [&_pre]:p-3 [&_strong]:font-semibold min-h-32"
-            dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
-            onClick={handlePreviewClick}
-          />
-          {missingWikilink ? (
-            <form
-              action={createNoteFromWikilinkAction}
-              className="rounded-card border border-blue-soft bg-blue-soft px-4 py-3"
-            >
-              <input name="projectId" type="hidden" value={projectId} />
-              <input name="title" type="hidden" value={missingWikilink} />
-              <p className="text-sm text-ink">
-                No existe una nota llamada{" "}
-                <span className="font-medium">{missingWikilink}</span>.
-              </p>
+      <aside
+        className={`absolute right-0 top-0 bottom-0 z-40 flex flex-col border-l border-line bg-paper overflow-hidden transition-transform duration-200 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+        style={{ width: 360, boxShadow: isOpen ? "var(--shadow-lift)" : "none" }}
+        aria-label="Inspector de nota"
+      >
+        {/* Header */}
+        <div className="sticky top-0 flex shrink-0 items-center justify-between gap-3 border-b border-line bg-paper/90 px-4 py-3 backdrop-blur-sm">
+          <h2 className="text-sm font-semibold text-ink">Inspector</h2>
+          <div className="flex items-center gap-2">
+            {note && (
               <button
-                className="mt-2 h-9 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
+                className="h-7 rounded-btn border border-red-200 px-2.5 text-xs font-medium text-red-700 transition hover:bg-red-50"
+                onClick={() => deleteDialogRef.current?.showModal()}
+                type="button"
+              >
+                Eliminar
+              </button>
+            )}
+            <button
+              className="h-7 w-7 rounded-btn border border-line text-ink-faint transition hover:bg-card hover:text-ink flex items-center justify-center"
+              onClick={onClose}
+              type="button"
+              aria-label="Cerrar inspector"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M2 2l8 8M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {!note ? (
+          <div className="px-4 py-6">
+            <p className="text-sm text-ink-soft">
+              Seleccioná una nota para editarla.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-y-auto flex-1">
+            <form action={updateFormAction} className="grid gap-4 px-4 py-4">
+              <input name="projectId" type="hidden" value={projectId} />
+              <input name="noteId" type="hidden" value={note.id} />
+
+              {/* Title */}
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide text-ink-faint" htmlFor="title">
+                  Título
+                </label>
+                <input
+                  className="h-9 rounded-btn border border-line bg-paper px-3 text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
+                  defaultValue={note.title}
+                  key={note.id + "-title"}
+                  id="title"
+                  maxLength={200}
+                  name="title"
+                  required
+                  onChange={(e) => onUpdate(note.id, { title: e.target.value })}
+                />
+              </div>
+
+              {/* Layer buttons */}
+              <div className="grid gap-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Capa</p>
+                <div className="flex flex-wrap gap-1">
+                  {NOTE_LAYERS.map((layer) => {
+                    const layerDef = LAYERS.find((l) => l.id === layer);
+                    const label = layerDef?.name ?? "Sin capa";
+                    const color = LAYER_COLORS[layer] ?? "var(--ink-faint)";
+                    const active = note.layer === layer;
+                    return (
+                      <button
+                        key={layer}
+                        type="submit"
+                        name="layer"
+                        value={layer}
+                        onClick={() => onUpdate(note.id, { layer: layer as ShellNote["layer"] })}
+                        className={`flex items-center gap-1 rounded-pill px-2 py-0.5 text-xs font-medium transition ${
+                          active
+                            ? "bg-blue-soft text-blue ring-1 ring-blue/30"
+                            : "bg-paper-2 text-ink-soft hover:bg-card"
+                        }`}
+                      >
+                        {layer !== "none" && (
+                          <span
+                            className="h-2 w-2 rounded-full shrink-0"
+                            style={{ background: color }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input type="hidden" name="layer" value={note.layer} />
+              </div>
+
+              {/* Status buttons */}
+              <div className="grid gap-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Estado</p>
+                <div className="flex flex-wrap gap-1">
+                  {NOTE_STATUSES.map((status) => {
+                    const active = note.status === status;
+                    const color = STATUS_COLORS[status];
+                    return (
+                      <button
+                        key={status}
+                        type="submit"
+                        name="status"
+                        value={status}
+                        onClick={() => onUpdate(note.id, { status: status as ShellNote["status"] })}
+                        className={`flex items-center gap-1 rounded-pill px-2 py-0.5 text-xs font-medium transition ${
+                          active
+                            ? "bg-blue-soft text-blue ring-1 ring-blue/30"
+                            : "bg-paper-2 text-ink-soft hover:bg-card"
+                        }`}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ background: active ? color : "var(--ink-faint)" }}
+                          aria-hidden="true"
+                        />
+                        {statusLabels[status]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input type="hidden" name="status" value={note.status} />
+              </div>
+
+              {/* Content */}
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide text-ink-faint" htmlFor="content">
+                  Contenido
+                </label>
+                <textarea
+                  className="min-h-40 rounded-btn border border-line bg-[#FCFBF8] px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft resize-y"
+                  defaultValue={note.content}
+                  key={note.id + "-content"}
+                  id="content"
+                  name="content"
+                  placeholder="Contenido… usa [[Título]] para enlazar"
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    onUpdate(note.id, { content: e.target.value });
+                  }}
+                />
+              </div>
+
+              {/* Preview */}
+              <div className="grid gap-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Vista previa</p>
+                <div
+                  className="rounded-card border border-line bg-[#FCFBF8] px-3 py-2 text-sm leading-6 text-ink min-h-16 [&_[data-wikilink]]:text-blue [&_[data-wikilink]]:underline [&_[data-wikilink]]:decoration-blue/30 [&_a]:font-medium [&_a]:text-blue [&_code]:rounded [&_code]:bg-card [&_code]:px-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-semibold"
+                  dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
+                  onClick={handlePreviewClick}
+                />
+                {missingWikilink && (
+                  <form action={createNoteFromWikilinkAction} className="rounded-card border border-blue-soft bg-blue-soft px-3 py-2">
+                    <input name="projectId" type="hidden" value={projectId} />
+                    <input name="title" type="hidden" value={missingWikilink} />
+                    <p className="text-sm text-ink">
+                      No existe una nota llamada{" "}
+                      <span className="font-medium">{missingWikilink}</span>.
+                    </p>
+                    <button
+                      className="mt-2 h-8 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
+                      type="submit"
+                    >
+                      Crear nota
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              {/* Tags */}
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide text-ink-faint" htmlFor="tags">
+                  Etiquetas
+                </label>
+                <input
+                  className="h-9 rounded-btn border border-line bg-paper px-3 text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
+                  defaultValue={note.tags.join(", ")}
+                  key={note.id + "-tags"}
+                  id="tags"
+                  name="tags"
+                  placeholder="etiqueta1, etiqueta2"
+                  onChange={(e) => {
+                    const tags = e.target.value.split(",").map((t) => t.trim()).filter(Boolean);
+                    onUpdate(note.id, { tags });
+                  }}
+                />
+                {note.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {note.tags.map((tag) => (
+                      <span key={tag} className="rounded-pill bg-blue-soft px-2 py-0.5 text-xs font-semibold text-blue">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Links */}
+              <section className="rounded-card border border-line bg-paper-2 p-3 grid gap-3">
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-faint mb-1.5">
+                    Enlaza a
+                  </h3>
+                  {outgoingLinks.length === 0 ? (
+                    <p className="text-xs text-ink-faint">Sin enlaces.</p>
+                  ) : (
+                    <ul className="grid gap-0.5">
+                      {outgoingLinks.map((link) => (
+                        <li className="text-sm" key={link.title}>
+                          {link.noteId ? (
+                            <button
+                              type="button"
+                              className="font-medium text-blue hover:text-blue-deep transition text-left"
+                              onClick={() => onNoteNavigate(link.noteId!)}
+                            >
+                              {link.title}
+                            </button>
+                          ) : (
+                            <span className="text-ink-faint">{link.title}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-faint mb-1.5">
+                    Le enlazan
+                  </h3>
+                  {backlinks.length === 0 ? (
+                    <p className="text-xs text-ink-faint">Sin backlinks.</p>
+                  ) : (
+                    <ul className="grid gap-0.5">
+                      {backlinks.map((link) => (
+                        <li className="text-sm" key={link.id}>
+                          <button
+                            type="button"
+                            className="font-medium text-blue hover:text-blue-deep transition text-left"
+                            onClick={() => onNoteNavigate(link.id)}
+                          >
+                            {link.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </section>
+
+              {updateState.error && (
+                <p className="rounded-btn border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {updateState.error}
+                </p>
+              )}
+              <button
+                className="h-9 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep disabled:opacity-50"
+                disabled={updatePending}
                 type="submit"
               >
-                Crear nota
+                {updatePending ? "Guardando…" : "Guardar cambios"}
               </button>
             </form>
-          ) : null}
-        </div>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-ink" htmlFor="tags">
-            Etiquetas
-          </label>
-          <input
-            className="h-10 rounded-btn border border-line bg-paper px-3 text-base text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
-            defaultValue={note.tags.join(", ")}
-            id="tags"
-            name="tags"
-          />
-          {note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {note.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-pill bg-blue-soft px-2.5 py-0.5 text-xs font-semibold text-blue"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        <section className="rounded-card border border-line bg-paper-2 p-4 grid gap-4">
-          <div>
-            <h3 className="text-sm font-semibold text-ink">
-              Enlaces salientes
-            </h3>
-            {outgoingLinks.length === 0 ? (
-              <p className="mt-2 text-sm text-ink-soft">Sin enlaces.</p>
-            ) : (
-              <ul className="mt-2 grid gap-1">
-                {outgoingLinks.map((link) => (
-                  <li className="text-sm" key={link.title}>
-                    {link.noteId ? (
-                      <a
-                        className="font-medium text-blue hover:text-blue-deep transition"
-                        href={`/projects/${projectId}?note=${link.noteId}`}
-                      >
-                        {link.title}
-                      </a>
-                    ) : (
-                      <span className="text-ink-faint">{link.title}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-ink">Backlinks</h3>
-            {backlinks.length === 0 ? (
-              <p className="mt-2 text-sm text-ink-soft">Sin backlinks.</p>
-            ) : (
-              <ul className="mt-2 grid gap-1">
-                {backlinks.map((link) => (
-                  <li className="text-sm" key={link.id}>
-                    <a
-                      className="font-medium text-blue hover:text-blue-deep transition"
-                      href={`/projects/${projectId}?note=${link.id}`}
-                    >
-                      {link.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-        {updateState.error ? (
-          <p className="rounded-btn border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {updateState.error}
-          </p>
-        ) : null}
-        <button
-          className="h-10 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={updatePending}
-          type="submit"
-        >
-          {updatePending ? "Guardando..." : "Guardar cambios"}
-        </button>
-      </form>
+        )}
+      </aside>
 
-      <dialog
-        className="w-[min(92vw,420px)] rounded-dialog border border-line bg-card p-0 text-ink shadow-lift backdrop:bg-ink/20 backdrop:backdrop-blur-sm"
-        ref={deleteDialogRef}
-      >
-        <form action={deleteFormAction} className="grid gap-5 p-6">
-          <input name="projectId" type="hidden" value={projectId} />
-          <input name="noteId" type="hidden" value={note.id} />
-          <div>
-            <h2 className="text-lg font-semibold text-ink">Eliminar nota</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              También se borrarán sus conexiones.
+      {/* Delete confirmation dialog */}
+      {note && (
+        <dialog
+          className="w-[min(92vw,420px)] rounded-dialog border border-line bg-card p-0 text-ink shadow-lift backdrop:bg-ink/20 backdrop:backdrop-blur-sm"
+          ref={deleteDialogRef}
+        >
+          <form action={deleteFormAction} className="grid gap-5 p-6">
+            <input name="projectId" type="hidden" value={projectId} />
+            <input name="noteId" type="hidden" value={note.id} />
+            <div>
+              <h2 className="text-lg font-semibold text-ink">Eliminar nota</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                También se borrarán sus conexiones. Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <p className="rounded-btn border border-line bg-paper px-3 py-2 text-sm font-medium text-ink">
+              {note.title}
             </p>
-          </div>
-          <p className="rounded-btn border border-line bg-paper px-3 py-2 text-sm font-medium text-ink">
-            {note.title}
-          </p>
-          {deleteState.error ? (
-            <p className="rounded-btn border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {deleteState.error}
-            </p>
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <button
-              className="h-10 rounded-btn border border-line px-4 text-sm font-medium text-ink-soft transition hover:bg-paper"
-              disabled={deletePending}
-              formMethod="dialog"
-              type="submit"
-            >
-              Cancelar
-            </button>
-            <button
-              className="h-10 rounded-btn px-4 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ backgroundColor: '#B4452E' }}
-              disabled={deletePending}
-              type="submit"
-            >
-              {deletePending ? "Eliminando..." : "Eliminar"}
-            </button>
-          </div>
-        </form>
-      </dialog>
-    </aside>
+            {deleteState.error && (
+              <p className="rounded-btn border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {deleteState.error}
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                className="h-10 rounded-btn border border-line px-4 text-sm font-medium text-ink-soft transition hover:bg-paper"
+                disabled={deletePending}
+                formMethod="dialog"
+                type="submit"
+              >
+                Cancelar
+              </button>
+              <button
+                className="h-10 rounded-btn px-4 text-sm font-semibold text-white transition disabled:opacity-50"
+                style={{ backgroundColor: "#B4452E" }}
+                disabled={deletePending}
+                type="submit"
+              >
+                {deletePending ? "Eliminando…" : "Eliminar"}
+              </button>
+            </div>
+          </form>
+        </dialog>
+      )}
+    </>
   );
 }

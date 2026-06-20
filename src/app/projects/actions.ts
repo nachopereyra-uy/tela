@@ -145,7 +145,7 @@ export async function renameProjectAction(
     return { error: "No pudimos renombrar el proyecto." };
   }
 
-  redirect("/projects");
+  redirect(`/projects/${projectId}`);
 }
 
 export async function deleteProjectAction(

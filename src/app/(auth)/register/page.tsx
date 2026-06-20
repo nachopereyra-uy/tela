@@ -1,3 +1,4 @@
+import { Logo } from "@/app/components/logo";
 import { AuthForm } from "../auth-form";
 import { signUp } from "@/server/auth";
 
@@ -6,9 +7,7 @@ export default function RegisterPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-paper px-6 py-16">
       <div className="w-full max-w-sm rounded-dialog border border-line bg-card p-8 shadow-lift">
         <div className="mb-8">
-          <p className="font-display text-3xl text-ink">
-            Tela<span className="inline-block h-[7px] w-[7px] translate-y-[-8px] rounded-full bg-blue align-top ml-0.5" />
-          </p>
+          <Logo />
           <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink">Crear cuenta</h1>
           <p className="mt-1.5 text-sm text-ink-soft">Registrate para empezar.</p>
         </div>

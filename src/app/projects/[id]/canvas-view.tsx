@@ -19,6 +19,7 @@ import {
   deleteCanvasEdgeAction,
   moveNotePositionAction,
 } from "./actions";
+import type { ShellEdge } from "./project-shell";
 
 type CanvasNote = {
   id: string;
@@ -38,6 +39,9 @@ type CanvasViewProps = {
   notes: CanvasNote[];
   presentMode?: boolean;
   projectId: string;
+  onNoteSelect?: (id: string) => void;
+  onEdgeCreate?: (edge: ShellEdge) => void;
+  onEdgeDelete?: (edgeId: string) => void;
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -116,7 +120,7 @@ function NoteNode({ data, selected }: NodeProps & { data: NoteNodeData }) {
   );
 }
 
-export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewProps) {
+export function CanvasView({ edges, notes, presentMode, projectId, onNoteSelect, onEdgeCreate, onEdgeDelete }: CanvasViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [localEdges, setLocalEdges] = useState<FlowEdge[]>(
     edges.map((edge) => ({
@@ -185,6 +189,13 @@ export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewP
           target: edge.toNoteId,
         },
       ]);
+
+      onEdgeCreate?.({
+        id: edge.id,
+        fromNoteId: edge.fromNoteId,
+        toNoteId: edge.toNoteId,
+        label: null,
+      });
     });
   }
 
@@ -196,6 +207,7 @@ export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewP
     );
 
     for (const edge of deletedEdges) {
+      onEdgeDelete?.(edge.id);
       startTransition(async () => {
         try {
           await deleteCanvasEdgeAction({ projectId, edgeId: edge.id });
@@ -207,16 +219,8 @@ export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewP
   }
 
   return (
-    <section className="border-t border-line py-8">
-      {!presentMode && (
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold text-ink">Lienzo</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Nodos posicionables con pan y zoom.
-          </p>
-        </div>
-      )}
-      <div className={`overflow-hidden rounded-card border border-line ${presentMode ? "h-[80vh]" : "h-[520px]"}`}>
+    <div className="h-full">
+      <div className="h-full overflow-hidden">
         <ReactFlow
           edges={localEdges}
           fitView
@@ -225,6 +229,7 @@ export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewP
           onConnect={handleConnect}
           onEdgesDelete={handleEdgesDelete}
           onNodeDragStop={handleNodeDragStop}
+          onNodeClick={onNoteSelect ? (_event, node) => onNoteSelect(node.id) : undefined}
           proOptions={{ hideAttribution: true }}
         >
           <Background variant={BackgroundVariant.Dots} gap={24} size={1.1} color="var(--line-strong)" />
@@ -232,6 +237,6 @@ export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewP
           <MiniMap pannable zoomable />
         </ReactFlow>
       </div>
-    </section>
+    </div>
   );
 }

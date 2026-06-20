@@ -1,21 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  backlinks,
+  findByTitle,
+  outgoingLinks,
+  wikilinkEdges,
+  type NoteLayer,
+  type NoteStatus,
+  type Note,
+} from "@/core";
 import { createNoteAction } from "./actions";
 import { BoardView } from "./board-view";
 import { CanvasView } from "./canvas-view";
 import { FunnelView } from "./funnel-view";
 import { GraphView } from "./graph-view";
-import { NoteInspector, type InspectorNote } from "./note-inspector";
+import { DocumentsView } from "./documents-view";
+import { NoteInspector } from "./note-inspector";
+import { Sidebar } from "./sidebar";
 
 export type ShellNote = {
   id: string;
   projectId: string;
   title: string;
   content: string;
-  status: string;
-  layer: string;
+  status: NoteStatus;
+  layer: NoteLayer;
   x: number;
   y: number;
   tags: string[];
@@ -28,205 +38,408 @@ export type ShellEdge = {
   label: string | null;
 };
 
-type WikilinkEdge = {
-  fromNoteId: string;
-  toNoteId: string;
-  title: string;
+export type ShellProject = {
+  id: string;
+  name: string;
+  color: string;
 };
 
+export type View = "funnel" | "canvas" | "board" | "documents" | "graph";
+
+const VALID_VIEWS: View[] = ["funnel", "canvas", "board", "documents", "graph"];
+
 type ProjectShellProps = {
-  project: { id: string; name: string };
+  project: ShellProject;
+  allProjects: ShellProject[];
   notes: ShellNote[];
   explicitEdges: ShellEdge[];
-  selectedNoteId: string | null;
-  inspectorNote: InspectorNote | null;
-  outgoingLinks: { title: string; noteId: string | null }[];
-  backlinks: { id: string; title: string }[];
-  wikilinkEdges: WikilinkEdge[];
+  initialNoteId: string | null;
 };
+
+function toCoreNote(note: ShellNote): Note {
+  return {
+    ...note,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+const VIEW_LABELS: Record<View, string> = {
+  funnel: "Embudo",
+  canvas: "Lienzo",
+  board: "Tablero",
+  documents: "Documentos",
+  graph: "Grafo",
+};
+
+// Simple SVG icons
+function IconFunnel({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2 3h12l-4.5 5v4l-3-1.5V8L2 3z"
+        stroke={active ? "var(--blue)" : "currentColor"}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function IconCanvas({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2" y="2" width="5" height="5" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <rect x="9" y="2" width="5" height="5" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <rect x="2" y="9" width="5" height="5" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <path d="M9 11.5h5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M11.5 9v5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconBoard({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2" y="2" width="3" height="12" rx="1" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <rect x="6.5" y="2" width="3" height="8" rx="1" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <rect x="11" y="2" width="3" height="10" rx="1" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+    </svg>
+  );
+}
+
+function IconDocs({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <path d="M5.5 5h5M5.5 7.5h5M5.5 10h3" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconGraph({ active }: { active: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="3" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <circle cx="3" cy="13" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <circle cx="13" cy="13" r="2" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" fill="none" />
+      <path d="M6.5 4.5L4.5 11.5M9.5 4.5L11.5 11.5M5 13h6" stroke={active ? "var(--blue)" : "currentColor"} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export function ProjectShell({
   project,
-  notes,
-  explicitEdges,
-  selectedNoteId,
-  inspectorNote,
-  outgoingLinks,
-  backlinks,
-  wikilinkEdges,
+  allProjects,
+  notes: initialNotes,
+  explicitEdges: initialEdges,
+  initialNoteId,
 }: ProjectShellProps) {
+  const [activeView, setActiveView] = useState<View>("funnel");
+  const [localNotes, setLocalNotes] = useState<ShellNote[]>(initialNotes);
+  const [localEdges, setLocalEdges] = useState<ShellEdge[]>(initialEdges);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(initialNoteId);
+  const [inspectorOpen, setInspectorOpen] = useState(!!initialNoteId);
   const [search, setSearch] = useState("");
   const [presentMode, setPresentMode] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const deleteNoteRef = useRef<(() => void) | null>(null);
 
-  const filteredNotes = useMemo(() => {
-    if (!search.trim()) return notes;
-    const q = search.toLowerCase();
-    return notes.filter(
-      (n) =>
-        n.title.toLowerCase().includes(q) ||
-        n.tags.some((tag) => tag.toLowerCase().includes(q)),
-    );
-  }, [notes, search]);
+  // Sync from server on RSC re-render (after revalidatePath)
+  useEffect(() => {
+    setLocalNotes(initialNotes);
+  }, [initialNotes]);
+  useEffect(() => {
+    setLocalEdges(initialEdges);
+  }, [initialEdges]);
 
-  const wikilinkTargets = notes.map((n) => ({ id: n.id, title: n.title }));
+  // Load active view from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`tela:view:${project.id}`);
+      if (stored && VALID_VIEWS.includes(stored as View)) {
+        setActiveView(stored as View);
+      }
+    } catch {
+      // localStorage unavailable (SSR guard)
+    }
+  }, [project.id]);
 
-  if (presentMode) {
-    return (
-      <div className="min-h-screen bg-paper-2">
-        <div className="flex items-center justify-between border-b border-line bg-paper-2 px-6 py-3">
-          <span className="text-sm font-semibold text-ink">
-            {project.name}
-          </span>
-          <button
-            className="h-8 rounded-btn border border-line px-4 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
-            onClick={() => setPresentMode(false)}
-            type="button"
-          >
-            Salir
-          </button>
-        </div>
-        <div className="px-6 py-6">
-          <FunnelView
-            notes={filteredNotes}
-            presentMode
-            projectId={project.id}
-          />
-          <BoardView
-            notes={filteredNotes}
-            presentMode
-            projectId={project.id}
-          />
-          <CanvasView
-            edges={explicitEdges}
-            notes={notes}
-            presentMode
-            projectId={project.id}
-          />
-          <GraphView
-            explicitEdges={explicitEdges}
-            notes={notes}
-            presentMode
-            projectId={project.id}
-            wikilinkEdges={wikilinkEdges}
-          />
-        </div>
-      </div>
+  function handleViewChange(view: View) {
+    setActiveView(view);
+    try {
+      localStorage.setItem(`tela:view:${project.id}`, view);
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleNoteSelect(noteId: string) {
+    setSelectedNoteId(noteId);
+    setInspectorOpen(true);
+  }
+
+  function handleInspectorClose() {
+    setInspectorOpen(false);
+  }
+
+  // Called from inspector when fields change — updates card in view immediately
+  function handleNoteUpdate(noteId: string, changes: Partial<ShellNote>) {
+    setLocalNotes((current) =>
+      current.map((n) => (n.id === noteId ? { ...n, ...changes } : n)),
     );
   }
 
+  // Called from inspector after successful delete (no redirect now)
+  function handleNoteDeleted(noteId: string) {
+    setLocalNotes((current) => current.filter((n) => n.id !== noteId));
+    setLocalEdges((current) =>
+      current.filter(
+        (e) => e.fromNoteId !== noteId && e.toNoteId !== noteId,
+      ),
+    );
+    setSelectedNoteId(null);
+    setInspectorOpen(false);
+  }
+
+  // Edge handlers for canvas
+  function handleEdgeCreate(edge: ShellEdge) {
+    setLocalEdges((current) => [...current, edge]);
+  }
+
+  function handleEdgeDelete(edgeId: string) {
+    setLocalEdges((current) => current.filter((e) => e.id !== edgeId));
+  }
+
+  // Search filtering
+  const filteredNotes = useMemo(() => {
+    if (!search.trim()) return localNotes;
+    const q = search.toLowerCase();
+    return localNotes.filter(
+      (n) =>
+        n.title.toLowerCase().includes(q) ||
+        n.tags.some((t) => t.toLowerCase().includes(q)),
+    );
+  }, [localNotes, search]);
+
+  // Inspector data computed client-side from core functions
+  const coreNotes = useMemo(() => localNotes.map(toCoreNote), [localNotes]);
+  const selectedNote = useMemo(
+    () => localNotes.find((n) => n.id === selectedNoteId) ?? null,
+    [localNotes, selectedNoteId],
+  );
+  const selectedCoreNote = useMemo(
+    () => (selectedNote ? toCoreNote(selectedNote) : null),
+    [selectedNote],
+  );
+  const computedOutgoingLinks = useMemo(
+    () =>
+      selectedCoreNote
+        ? outgoingLinks(selectedCoreNote.content).map((title) => ({
+            title,
+            noteId: findByTitle(coreNotes, title)?.id ?? null,
+          }))
+        : [],
+    [selectedCoreNote, coreNotes],
+  );
+  const computedBacklinks = useMemo(
+    () =>
+      selectedCoreNote
+        ? backlinks(selectedCoreNote, coreNotes).map((n) => ({
+            id: n.id,
+            title: n.title,
+          }))
+        : [],
+    [selectedCoreNote, coreNotes],
+  );
+  const computedWikilinkEdges = useMemo(
+    () => wikilinkEdges(coreNotes),
+    [coreNotes],
+  );
+  const wikilinkTargets = useMemo(
+    () => localNotes.map((n) => ({ id: n.id, title: n.title })),
+    [localNotes],
+  );
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (e.key === "Escape") {
+        handleInspectorClose();
+        return;
+      }
+      if (e.key === "Delete") {
+        const target = e.target as Element;
+        if (target.matches("input, textarea, select, [contenteditable]")) return;
+        if (selectedNoteId && inspectorOpen) {
+          deleteNoteRef.current?.();
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedNoteId, inspectorOpen]);
+
+  // View title and icon for topbar
+  const VIEW_ICONS: Record<View, React.ReactNode> = {
+    funnel: <IconFunnel active />,
+    canvas: <IconCanvas active />,
+    board: <IconBoard active />,
+    documents: <IconDocs active />,
+    graph: <IconGraph active />,
+  };
+
   return (
-    <main className="grid min-h-screen grid-cols-[minmax(0,1fr)_400px] bg-paper">
-      <section className="flex flex-col">
+    <div className="flex h-screen overflow-hidden bg-paper">
+      {/* Sidebar */}
+      {!presentMode && (
+        <Sidebar
+          project={project}
+          allProjects={allProjects}
+          noteCount={localNotes.length}
+          connectionCount={localEdges.length}
+          activeView={activeView}
+          onViewChange={handleViewChange}
+          icons={{
+            funnel: <IconFunnel active={activeView === "funnel"} />,
+            canvas: <IconCanvas active={activeView === "canvas"} />,
+            board: <IconBoard active={activeView === "board"} />,
+            documents: <IconDocs active={activeView === "documents"} />,
+            graph: <IconGraph active={activeView === "graph"} />,
+          }}
+        />
+      )}
+
+      {/* Main area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-paper/80 backdrop-blur-sm px-6 py-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
-              className="shrink-0 text-sm text-ink-soft transition hover:text-ink"
-              href="/projects"
-            >
-              ← Proyectos
-            </Link>
-            <span className="text-ink-faint">/</span>
-            <span className="truncate font-semibold text-ink">{project.name}</span>
+        <header
+          className="flex h-[54px] shrink-0 items-center gap-3 border-b border-line px-4"
+          style={{ background: "rgba(250,248,243,0.85)", backdropFilter: "blur(6px)" }}
+        >
+          {presentMode && (
+            <span className="font-display text-ink mr-2" style={{ fontSize: 24, lineHeight: 1, position: "relative" }}>
+              Tela
+              <span
+                className="absolute rounded-full bg-blue"
+                style={{ width: 6, height: 6, top: 3, right: -8 }}
+                aria-hidden="true"
+              />
+            </span>
+          )}
+          <div className="flex items-center gap-2 min-w-0 mr-2">
+            <span className="text-blue">{VIEW_ICONS[activeView]}</span>
+            <span className="text-sm font-semibold text-ink">{VIEW_LABELS[activeView]}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <input
-              className="h-9 w-44 rounded-btn border border-line bg-paper px-3 text-sm placeholder:text-ink-faint focus:border-blue focus:bg-card focus:ring-2 focus:ring-blue-soft outline-none transition"
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar…"
-              type="search"
-              value={search}
-            />
+          <input
+            ref={searchRef}
+            type="search"
+            placeholder="Buscar notas…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-48 rounded-btn border border-line bg-paper px-3 text-sm placeholder:text-ink-faint focus:border-blue focus:bg-card focus:outline-none focus:ring-2 focus:ring-blue-soft transition"
+          />
+          <div className="ml-auto flex items-center gap-2">
             <button
-              className="h-9 rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
-              onClick={() => setPresentMode(true)}
               type="button"
+              onClick={() => setPresentMode((v) => !v)}
+              className="h-8 rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
             >
-              Presentar
+              {presentMode ? "Salir" : "Presentar"}
             </button>
             <a
-              className="flex h-9 items-center rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
               href={`/projects/${project.id}/export`}
+              className="h-8 inline-flex items-center rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
             >
-              Exportar JSON
+              Exportar
             </a>
             <form action={createNoteAction}>
-              <input name="projectId" type="hidden" value={project.id} />
+              <input type="hidden" name="projectId" value={project.id} />
               <button
-                className="h-9 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep"
                 type="submit"
+                className="h-8 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
               >
-                Nueva nota
+                + Nueva nota
               </button>
             </form>
           </div>
-        </div>
+        </header>
 
-        {/* Note list + views */}
-        <div className="px-6 py-6">
-          {notes.length === 0 ? (
-            <section className="py-12">
-              <h2 className="text-xl font-semibold text-ink">
-                No hay notas todavía
-              </h2>
-              <p className="mt-2 max-w-xl text-ink-soft">
-                Crea una nota para editar su título, contenido, capa, estado y
-                etiquetas.
-              </p>
-            </section>
-          ) : filteredNotes.length === 0 ? (
-            <section className="py-12">
-              <h2 className="text-xl font-semibold text-ink">
-                Sin resultados
-              </h2>
-              <p className="mt-2 max-w-xl text-ink-soft">
-                Ninguna nota coincide con &ldquo;{search}&rdquo;.
-              </p>
-            </section>
-          ) : (
-            <ul className="grid gap-2">
-              {filteredNotes.map((note) => (
-                <li key={note.id}>
-                  <Link
-                    className={`block rounded-card border bg-card px-4 py-3 shadow-card transition hover:shadow-lift ${
-                      selectedNoteId === note.id
-                        ? "border-blue ring-2 ring-blue-soft"
-                        : "border-line"
-                    }`}
-                    href={`/projects/${project.id}?note=${note.id}`}
-                  >
-                    <h2 className="font-medium text-ink">{note.title}</h2>
-                    <p className="mt-1 line-clamp-2 text-sm text-ink-soft">
-                      {note.content || "Sin contenido"}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+        {/* Stage */}
+        <div className="relative flex-1 overflow-hidden">
+          {activeView === "funnel" && (
+            <FunnelView
+              notes={filteredNotes}
+              projectId={project.id}
+              onNoteSelect={handleNoteSelect}
+            />
+          )}
+          {activeView === "canvas" && (
+            <CanvasView
+              notes={localNotes}
+              edges={localEdges}
+              projectId={project.id}
+              onNoteSelect={handleNoteSelect}
+              onEdgeCreate={handleEdgeCreate}
+              onEdgeDelete={handleEdgeDelete}
+            />
+          )}
+          {activeView === "board" && (
+            <BoardView
+              notes={filteredNotes}
+              projectId={project.id}
+              onNoteSelect={handleNoteSelect}
+            />
+          )}
+          {activeView === "documents" && (
+            <DocumentsView
+              notes={filteredNotes}
+              projectId={project.id}
+              selectedNoteId={selectedNoteId}
+              onNoteSelect={(id) => {
+                setSelectedNoteId(id);
+                setInspectorOpen(false);
+              }}
+              onNoteUpdate={handleNoteUpdate}
+              wikilinkTargets={wikilinkTargets}
+            />
+          )}
+          {activeView === "graph" && (
+            <GraphView
+              notes={localNotes}
+              explicitEdges={localEdges}
+              wikilinkEdges={computedWikilinkEdges}
+              projectId={project.id}
+              onNoteSelect={(id) => {
+                handleViewChange("documents");
+                handleNoteSelect(id);
+              }}
+            />
           )}
 
-          <FunnelView notes={filteredNotes} projectId={project.id} />
-          <BoardView notes={filteredNotes} projectId={project.id} />
-          <CanvasView
-            edges={explicitEdges}
-            notes={notes}
+          {/* Inspector overlay (slide from right) */}
+          <NoteInspector
+            note={selectedNote}
+            outgoingLinks={computedOutgoingLinks}
+            backlinks={computedBacklinks}
+            wikilinkTargets={wikilinkTargets}
             projectId={project.id}
-          />
-          <GraphView
-            explicitEdges={explicitEdges}
-            notes={notes}
-            projectId={project.id}
-            wikilinkEdges={wikilinkEdges}
+            isOpen={inspectorOpen && activeView !== "documents"}
+            onClose={handleInspectorClose}
+            onUpdate={handleNoteUpdate}
+            onDeleted={handleNoteDeleted}
+            onNoteNavigate={handleNoteSelect}
+            deleteRef={deleteNoteRef}
           />
         </div>
-      </section>
-      <NoteInspector
-        backlinks={backlinks}
-        note={inspectorNote}
-        outgoingLinks={outgoingLinks}
-        projectId={project.id}
-        wikilinkTargets={wikilinkTargets}
-      />
-    </main>
+      </div>
+    </div>
   );
 }
+
