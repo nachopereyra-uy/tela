@@ -17,7 +17,6 @@ import {
   renameProjectAction,
   type ProjectActionState,
 } from "./actions";
-import { createNoteAction } from "./[id]/actions";
 import type { View } from "./view-types";
 
 // ─── Context ──────────────────────────────────────────────────────────────────

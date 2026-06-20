@@ -25,7 +25,7 @@ import {
   deleteCanvasEdgeAction,
   moveNotePositionAction,
 } from "./actions";
-import type { ShellEdge, ShellNote } from "./project-shell";
+import type { ShellEdge } from "./project-shell";
 
 type CanvasNote = {
   id: string;
