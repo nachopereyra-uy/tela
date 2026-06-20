@@ -3,8 +3,8 @@ import { type NoteLayer, type NoteStatus } from "@/core";
 import { createClient } from "@/lib/supabase/server";
 import { listEdges } from "@/server/edges";
 import { listNotes } from "@/server/notes";
-import { getProject, listProjects } from "@/server/projects";
-import { ProjectShell, type ShellEdge, type ShellNote, type ShellProject } from "./project-shell";
+import { getProject } from "@/server/projects";
+import { ProjectShell, type ShellEdge, type ShellNote } from "./project-shell";
 
 type ProjectPageProps = {
   params: Promise<{ id: string }>;
@@ -45,22 +45,14 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
   const project = await getProject(user.id, id);
   if (!project) notFound();
 
-  const [allProjectsRaw, notes, explicitEdges] = await Promise.all([
-    listProjects(user.id),
+  const [notes, explicitEdges] = await Promise.all([
     listNotes(user.id, id),
     listEdges(user.id, id),
   ]);
 
-  const allProjects: ShellProject[] = allProjectsRaw.map((p) => ({
-    id: p.id,
-    name: p.name,
-    color: p.color ?? "#3457D5",
-  }));
-
   return (
     <ProjectShell
       project={{ id: project.id, name: project.name, color: project.color ?? "#3457D5" }}
-      allProjects={allProjects}
       notes={notes.map(toShellNote)}
       explicitEdges={explicitEdges.map(toShellEdge)}
       initialNoteId={initialNoteId ?? null}

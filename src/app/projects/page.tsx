@@ -13,18 +13,14 @@ export default async function ProjectsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const projects = await listProjects(user.id);
 
   return (
-    <main className="min-h-screen bg-paper">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper/80 px-8 py-5 backdrop-blur-sm">
-        <p className="font-display text-2xl text-ink">
-          Tela<span className="inline-block h-[6px] w-[6px] translate-y-[-7px] rounded-full bg-blue align-top ml-0.5" />
-        </p>
+    <div className="flex flex-col h-full overflow-y-auto">
+      <header className="flex items-center justify-between border-b border-line px-6 py-4 shrink-0">
+        <h1 className="text-lg font-semibold text-ink">Proyectos</h1>
         <div className="flex items-center gap-2">
           <form action={importProjectAction} className="flex items-center gap-2">
             <input
@@ -53,20 +49,15 @@ export default async function ProjectsPage() {
         </div>
       </header>
 
-      <h1 className="text-2xl font-semibold text-ink mt-6 px-8">Proyectos</h1>
-
       {projects.length === 0 ? (
-        <section className="px-8 py-16">
-          <h2 className="text-xl font-semibold text-ink">
-            No hay proyectos todavía
-          </h2>
+        <section className="px-6 py-16">
+          <h2 className="text-xl font-semibold text-ink">No hay proyectos todavía</h2>
           <p className="mt-2 max-w-xl text-ink-soft">
-            Crea el primer proyecto para empezar a ordenar notas por embudo,
-            tablero, documento, lienzo y grafo.
+            Crea el primer proyecto para empezar a ordenar notas por embudo, tablero, documento, lienzo y grafo.
           </p>
         </section>
       ) : (
-        <ul className="grid gap-3 px-8 py-6">
+        <ul className="grid gap-3 px-6 py-6">
           {projects.map((project) => (
             <li
               className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-card px-4 py-3 shadow-card hover:shadow-lift transition"
@@ -80,15 +71,13 @@ export default async function ProjectsPage() {
                   className="h-4 w-4 shrink-0 rounded-full"
                   style={{ backgroundColor: project.color }}
                 />
-                <span className="truncate font-medium text-ink">
-                  {project.name}
-                </span>
+                <span className="truncate font-medium text-ink">{project.name}</span>
               </Link>
               <ProjectActions projectId={project.id} projectName={project.name} />
             </li>
           ))}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

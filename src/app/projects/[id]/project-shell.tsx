@@ -17,7 +17,7 @@ import { FunnelView } from "./funnel-view";
 import { GraphView } from "./graph-view";
 import { DocumentsView } from "./documents-view";
 import { NoteInspector } from "./note-inspector";
-import { Sidebar } from "./sidebar";
+import { useProjectContext } from "../global-shell";
 
 export type ShellNote = {
   id: string;
@@ -44,13 +44,13 @@ export type ShellProject = {
   color: string;
 };
 
-export type View = "funnel" | "canvas" | "board" | "documents" | "graph";
+export type { View } from "../view-types";
+import type { View } from "../view-types";
 
 const VALID_VIEWS: View[] = ["funnel", "canvas", "board", "documents", "graph"];
 
 type ProjectShellProps = {
   project: ShellProject;
-  allProjects: ShellProject[];
   notes: ShellNote[];
   explicitEdges: ShellEdge[];
   initialNoteId: string | null;
@@ -72,7 +72,6 @@ const VIEW_LABELS: Record<View, string> = {
   graph: "Grafo",
 };
 
-// Simple SVG icons
 function IconFunnel({ active }: { active: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -131,18 +130,17 @@ function IconGraph({ active }: { active: boolean }) {
 
 export function ProjectShell({
   project,
-  allProjects,
   notes: initialNotes,
   explicitEdges: initialEdges,
   initialNoteId,
 }: ProjectShellProps) {
-  const [activeView, setActiveView] = useState<View>("funnel");
+  const { activeView, setActiveView, setNoteCount, setConnectionCount } = useProjectContext();
+
   const [localNotes, setLocalNotes] = useState<ShellNote[]>(initialNotes);
   const [localEdges, setLocalEdges] = useState<ShellEdge[]>(initialEdges);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(initialNoteId);
   const [inspectorOpen, setInspectorOpen] = useState(!!initialNoteId);
   const [search, setSearch] = useState("");
-  const [presentMode, setPresentMode] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const deleteNoteRef = useRef<(() => void) | null>(null);
 
@@ -154,7 +152,15 @@ export function ProjectShell({
     setLocalEdges(initialEdges);
   }, [initialEdges]);
 
-  // Load active view from localStorage
+  // Report counts to global sidebar
+  useEffect(() => {
+    setNoteCount(localNotes.length);
+  }, [localNotes.length, setNoteCount]);
+  useEffect(() => {
+    setConnectionCount(localEdges.length);
+  }, [localEdges.length, setConnectionCount]);
+
+  // Load active view from localStorage (initial mount only)
   useEffect(() => {
     try {
       const stored = localStorage.getItem(`tela:view:${project.id}`);
@@ -164,16 +170,8 @@ export function ProjectShell({
     } catch {
       // localStorage unavailable (SSR guard)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id]);
-
-  function handleViewChange(view: View) {
-    setActiveView(view);
-    try {
-      localStorage.setItem(`tela:view:${project.id}`, view);
-    } catch {
-      // ignore
-    }
-  }
 
   function handleNoteSelect(noteId: string) {
     setSelectedNoteId(noteId);
@@ -184,14 +182,12 @@ export function ProjectShell({
     setInspectorOpen(false);
   }
 
-  // Called from inspector when fields change — updates card in view immediately
   function handleNoteUpdate(noteId: string, changes: Partial<ShellNote>) {
     setLocalNotes((current) =>
       current.map((n) => (n.id === noteId ? { ...n, ...changes } : n)),
     );
   }
 
-  // Called from inspector after successful delete (no redirect now)
   function handleNoteDeleted(noteId: string) {
     setLocalNotes((current) => current.filter((n) => n.id !== noteId));
     setLocalEdges((current) =>
@@ -203,7 +199,6 @@ export function ProjectShell({
     setInspectorOpen(false);
   }
 
-  // Edge handlers for canvas
   function handleEdgeCreate(edge: ShellEdge) {
     setLocalEdges((current) => [...current, edge]);
   }
@@ -212,7 +207,6 @@ export function ProjectShell({
     setLocalEdges((current) => current.filter((e) => e.id !== edgeId));
   }
 
-  // Search filtering
   const filteredNotes = useMemo(() => {
     if (!search.trim()) return localNotes;
     const q = search.toLowerCase();
@@ -223,7 +217,6 @@ export function ProjectShell({
     );
   }, [localNotes, search]);
 
-  // Inspector data computed client-side from core functions
   const coreNotes = useMemo(() => localNotes.map(toCoreNote), [localNotes]);
   const selectedNote = useMemo(
     () => localNotes.find((n) => n.id === selectedNoteId) ?? null,
@@ -286,7 +279,6 @@ export function ProjectShell({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedNoteId, inspectorOpen]);
 
-  // View title and icon for topbar
   const VIEW_ICONS: Record<View, React.ReactNode> = {
     funnel: <IconFunnel active />,
     canvas: <IconCanvas active />,
@@ -296,150 +288,104 @@ export function ProjectShell({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-paper">
-      {/* Sidebar */}
-      {!presentMode && (
-        <Sidebar
-          project={project}
-          allProjects={allProjects}
-          noteCount={localNotes.length}
-          connectionCount={localEdges.length}
-          activeView={activeView}
-          onViewChange={handleViewChange}
-          icons={{
-            funnel: <IconFunnel active={activeView === "funnel"} />,
-            canvas: <IconCanvas active={activeView === "canvas"} />,
-            board: <IconBoard active={activeView === "board"} />,
-            documents: <IconDocs active={activeView === "documents"} />,
-            graph: <IconGraph active={activeView === "graph"} />,
-          }}
-        />
-      )}
-
-      {/* Main area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Topbar */}
-        <header
-          className="flex h-[54px] shrink-0 items-center gap-3 border-b border-line px-4"
-          style={{ background: "rgba(250,248,243,0.85)", backdropFilter: "blur(6px)" }}
-        >
-          {presentMode && (
-            <span className="font-display text-ink mr-2" style={{ fontSize: 24, lineHeight: 1, position: "relative" }}>
-              Tela
-              <span
-                className="absolute rounded-full bg-blue"
-                style={{ width: 6, height: 6, top: 3, right: -8 }}
-                aria-hidden="true"
-              />
-            </span>
-          )}
-          <div className="flex items-center gap-2 min-w-0 mr-2">
-            <span className="text-blue">{VIEW_ICONS[activeView]}</span>
-            <span className="text-sm font-semibold text-ink">{VIEW_LABELS[activeView]}</span>
-          </div>
-          <input
-            ref={searchRef}
-            type="search"
-            placeholder="Buscar notas…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-48 rounded-btn border border-line bg-paper px-3 text-sm placeholder:text-ink-faint focus:border-blue focus:bg-card focus:outline-none focus:ring-2 focus:ring-blue-soft transition"
-          />
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPresentMode((v) => !v)}
-              className="h-8 rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
-            >
-              {presentMode ? "Salir" : "Presentar"}
-            </button>
-            <a
-              href={`/projects/${project.id}/export`}
-              className="h-8 inline-flex items-center rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
-            >
-              Exportar
-            </a>
-            <form action={createNoteAction}>
-              <input type="hidden" name="projectId" value={project.id} />
-              <button
-                type="submit"
-                className="h-8 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
-              >
-                + Nueva nota
-              </button>
-            </form>
-          </div>
-        </header>
-
-        {/* Stage */}
-        <div className="relative flex-1 overflow-hidden">
-          {activeView === "funnel" && (
-            <FunnelView
-              notes={filteredNotes}
-              projectId={project.id}
-              onNoteSelect={handleNoteSelect}
-            />
-          )}
-          {activeView === "canvas" && (
-            <CanvasView
-              notes={localNotes}
-              edges={localEdges}
-              projectId={project.id}
-              onNoteSelect={handleNoteSelect}
-              onEdgeCreate={handleEdgeCreate}
-              onEdgeDelete={handleEdgeDelete}
-            />
-          )}
-          {activeView === "board" && (
-            <BoardView
-              notes={filteredNotes}
-              projectId={project.id}
-              onNoteSelect={handleNoteSelect}
-            />
-          )}
-          {activeView === "documents" && (
-            <DocumentsView
-              notes={filteredNotes}
-              projectId={project.id}
-              selectedNoteId={selectedNoteId}
-              onNoteSelect={(id) => {
-                setSelectedNoteId(id);
-                setInspectorOpen(false);
-              }}
-              onNoteUpdate={handleNoteUpdate}
-              wikilinkTargets={wikilinkTargets}
-            />
-          )}
-          {activeView === "graph" && (
-            <GraphView
-              notes={localNotes}
-              explicitEdges={localEdges}
-              wikilinkEdges={computedWikilinkEdges}
-              projectId={project.id}
-              onNoteSelect={(id) => {
-                handleViewChange("documents");
-                handleNoteSelect(id);
-              }}
-            />
-          )}
-
-          {/* Inspector overlay (slide from right) */}
-          <NoteInspector
-            note={selectedNote}
-            outgoingLinks={computedOutgoingLinks}
-            backlinks={computedBacklinks}
-            wikilinkTargets={wikilinkTargets}
-            projectId={project.id}
-            isOpen={inspectorOpen && activeView !== "documents"}
-            onClose={handleInspectorClose}
-            onUpdate={handleNoteUpdate}
-            onDeleted={handleNoteDeleted}
-            onNoteNavigate={handleNoteSelect}
-            deleteRef={deleteNoteRef}
-          />
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Topbar */}
+      <header
+        className="flex h-[54px] shrink-0 items-center gap-3 border-b border-line px-4"
+        style={{ background: "rgba(250,248,243,0.85)", backdropFilter: "blur(6px)" }}
+      >
+        <div className="flex items-center gap-2 min-w-0 mr-2">
+          <span className="text-blue">{VIEW_ICONS[activeView]}</span>
+          <span className="text-sm font-semibold text-ink">{VIEW_LABELS[activeView]}</span>
         </div>
+        <input
+          ref={searchRef}
+          type="search"
+          placeholder="Buscar notas…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 w-48 rounded-btn border border-line bg-paper px-3 text-sm placeholder:text-ink-faint focus:border-blue focus:bg-card focus:outline-none focus:ring-2 focus:ring-blue-soft transition"
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <form action={createNoteAction}>
+            <input type="hidden" name="projectId" value={project.id} />
+            <button
+              type="submit"
+              className="h-8 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
+            >
+              + Nueva nota
+            </button>
+          </form>
+        </div>
+      </header>
+
+      {/* Stage */}
+      <div className="relative flex-1 overflow-hidden">
+        {activeView === "funnel" && (
+          <FunnelView
+            notes={filteredNotes}
+            projectId={project.id}
+            onNoteSelect={handleNoteSelect}
+          />
+        )}
+        {activeView === "canvas" && (
+          <CanvasView
+            notes={localNotes}
+            edges={localEdges}
+            projectId={project.id}
+            onNoteSelect={handleNoteSelect}
+            onEdgeCreate={handleEdgeCreate}
+            onEdgeDelete={handleEdgeDelete}
+          />
+        )}
+        {activeView === "board" && (
+          <BoardView
+            notes={filteredNotes}
+            projectId={project.id}
+            onNoteSelect={handleNoteSelect}
+          />
+        )}
+        {activeView === "documents" && (
+          <DocumentsView
+            notes={filteredNotes}
+            projectId={project.id}
+            selectedNoteId={selectedNoteId}
+            onNoteSelect={(id) => {
+              setSelectedNoteId(id);
+              setInspectorOpen(false);
+            }}
+            onNoteUpdate={handleNoteUpdate}
+            wikilinkTargets={wikilinkTargets}
+          />
+        )}
+        {activeView === "graph" && (
+          <GraphView
+            notes={localNotes}
+            explicitEdges={localEdges}
+            wikilinkEdges={computedWikilinkEdges}
+            projectId={project.id}
+            onNoteSelect={(id) => {
+              setActiveView("documents");
+              handleNoteSelect(id);
+            }}
+          />
+        )}
+
+        {/* Inspector overlay (slide from right) */}
+        <NoteInspector
+          note={selectedNote}
+          outgoingLinks={computedOutgoingLinks}
+          backlinks={computedBacklinks}
+          wikilinkTargets={wikilinkTargets}
+          projectId={project.id}
+          isOpen={inspectorOpen && activeView !== "documents"}
+          onClose={handleInspectorClose}
+          onUpdate={handleNoteUpdate}
+          onDeleted={handleNoteDeleted}
+          onNoteNavigate={handleNoteSelect}
+          deleteRef={deleteNoteRef}
+        />
       </div>
     </div>
   );
 }
-
