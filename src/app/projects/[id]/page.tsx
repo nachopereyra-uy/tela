@@ -116,6 +116,10 @@ export default async function ProjectPage({
       <NoteInspector
         note={selectedNote ? toInspectorNote(selectedNote) : null}
         projectId={project.id}
+        wikilinkTargets={notes.map((note) => ({
+          id: note.id,
+          title: note.title,
+        }))}
       />
     </main>
   );

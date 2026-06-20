@@ -1,8 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  type MouseEvent,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { LAYERS, markdownToHtml, NOTE_LAYERS, NOTE_STATUSES } from "@/core";
 import {
+  createNoteFromWikilinkAction,
   deleteNoteAction,
   type NoteActionState,
   updateNoteAction,
@@ -20,6 +27,10 @@ export type InspectorNote = {
 type NoteInspectorProps = {
   projectId: string;
   note: InspectorNote | null;
+  wikilinkTargets: Array<{
+    id: string;
+    title: string;
+  }>;
 };
 
 const initialState: NoteActionState = {};
@@ -37,9 +48,18 @@ const layerLabels = new Map<string, string>([
   ["none", "Sin capa"],
 ]);
 
-export function NoteInspector({ projectId, note }: NoteInspectorProps) {
+function normalizeTitle(title: string) {
+  return title.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+}
+
+export function NoteInspector({
+  projectId,
+  note,
+  wikilinkTargets,
+}: NoteInspectorProps) {
   const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const [content, setContent] = useState(note?.content ?? "");
+  const [missingWikilink, setMissingWikilink] = useState<string | null>(null);
   const [updateState, updateFormAction, updatePending] = useActionState(
     updateNoteAction,
     initialState,
@@ -51,7 +71,40 @@ export function NoteInspector({ projectId, note }: NoteInspectorProps) {
 
   useEffect(() => {
     setContent(note?.content ?? "");
+    setMissingWikilink(null);
   }, [note?.content, note?.id]);
+
+  function handlePreviewClick(event: MouseEvent<HTMLDivElement>) {
+    const target = event.target;
+
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const link = target.closest("[data-wikilink]");
+
+    if (!(link instanceof HTMLElement)) {
+      return;
+    }
+
+    event.preventDefault();
+    const title = link.dataset.wikilink;
+
+    if (!title) {
+      return;
+    }
+
+    const existingNote = wikilinkTargets.find(
+      (targetNote) => normalizeTitle(targetNote.title) === normalizeTitle(title),
+    );
+
+    if (existingNote) {
+      window.location.href = `/projects/${projectId}?note=${existingNote.id}`;
+      return;
+    }
+
+    setMissingWikilink(title);
+  }
 
   if (!note) {
     return (
@@ -151,7 +204,27 @@ export function NoteInspector({ projectId, note }: NoteInspectorProps) {
           <div
             className="min-h-32 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-800 [&_a]:font-medium [&_a]:text-indigo-700 [&_code]:rounded [&_code]:bg-white [&_code]:px-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-white [&_pre]:p-3 [&_strong]:font-semibold"
             dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
+            onClick={handlePreviewClick}
           />
+          {missingWikilink ? (
+            <form
+              action={createNoteFromWikilinkAction}
+              className="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2"
+            >
+              <input name="projectId" type="hidden" value={projectId} />
+              <input name="title" type="hidden" value={missingWikilink} />
+              <p className="text-sm text-slate-700">
+                No existe una nota llamada{" "}
+                <span className="font-medium">{missingWikilink}</span>.
+              </p>
+              <button
+                className="mt-2 h-9 rounded-md bg-indigo-700 px-3 text-sm font-semibold text-white transition hover:bg-indigo-800"
+                type="submit"
+              >
+                Crear nota
+              </button>
+            </form>
+          ) : null}
         </div>
         <div className="grid gap-2">
           <label className="text-sm font-medium text-slate-800" htmlFor="tags">

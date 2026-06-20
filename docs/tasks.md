@@ -44,7 +44,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 ## Etapa 5 · Documentos
 
 - [x] **T5.1 — Editor + vista previa.** Contenido con preview usando `markdownToHtml`. *Hecho cuando:* lo escrito se previsualiza con formato.
-- [ ] **T5.2 — Wikilinks navegables.** `[[Título]]` abre la nota; si no existe, ofrece crearla. *Hecho cuando:* el clic abre o crea.
+- [x] **T5.2 — Wikilinks navegables.** `[[Título]]` abre la nota; si no existe, ofrece crearla. *Hecho cuando:* el clic abre o crea.
 - [ ] **T5.3 — Backlinks.** Enlaces salientes y backlinks calculados con `core/`. *Hecho cuando:* reflejan los enlaces reales.
 
 ## Etapa 6 · Lienzo y grafo

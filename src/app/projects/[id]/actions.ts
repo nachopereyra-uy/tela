@@ -90,6 +90,27 @@ export async function createNoteInLayerAction(formData: FormData) {
   redirect(`/projects/${projectId}?note=${note.id}`);
 }
 
+export async function createNoteFromWikilinkAction(formData: FormData) {
+  const userId = await getCurrentUserId();
+  const projectId = z.string().uuid().parse(formData.get("projectId"));
+  const title = z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .parse(formData.get("title"));
+  const note = await createNote(userId, projectId, {
+    title,
+  });
+
+  if (!note) {
+    redirect(`/projects/${projectId}`);
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}?note=${note.id}`);
+}
+
 export async function updateNoteAction(
   _state: NoteActionState,
   formData: FormData,
