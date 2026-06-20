@@ -28,7 +28,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 - [x] **T2.2 — `core/notes` con tests.** `outgoingLinks`, `findByTitle`, `backlinks`, `wikilinkEdges` + Vitest. *Hecho cuando:* tests en verde.
 - [x] **T2.3 — `core/markdown` con tests.** `markdownToHtml` (títulos, negrita, listas, código, `[[ ]]`, escape) + tests, incluido el de no-inyección. *Hecho cuando:* tests en verde.
 - [x] **T2.4 — Datos de notas.** `listNotes`, `createNote`, `updateNote`, `deleteNote` (borra sus edges), validando propiedad. *Hecho cuando:* CRUD respeta autorización.
-- [ ] **T2.5 — Inspector de nota.** Editar título, capa, estado, contenido y etiquetas; eliminar con confirmación. *Hecho cuando:* editar persiste y se refleja.
+- [x] **T2.5 — Inspector de nota.** Editar título, capa, estado, contenido y etiquetas; eliminar con confirmación. *Hecho cuando:* editar persiste y se refleja.
 
 ## Etapa 3 · Embudo
 
