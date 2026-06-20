@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useRef } from "react";
-import { LAYERS, NOTE_LAYERS, NOTE_STATUSES } from "@/core";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { LAYERS, markdownToHtml, NOTE_LAYERS, NOTE_STATUSES } from "@/core";
 import {
   deleteNoteAction,
   type NoteActionState,
@@ -39,6 +39,7 @@ const layerLabels = new Map<string, string>([
 
 export function NoteInspector({ projectId, note }: NoteInspectorProps) {
   const deleteDialogRef = useRef<HTMLDialogElement>(null);
+  const [content, setContent] = useState(note?.content ?? "");
   const [updateState, updateFormAction, updatePending] = useActionState(
     updateNoteAction,
     initialState,
@@ -47,6 +48,10 @@ export function NoteInspector({ projectId, note }: NoteInspectorProps) {
     deleteNoteAction,
     initialState,
   );
+
+  useEffect(() => {
+    setContent(note?.content ?? "");
+  }, [note?.content, note?.id]);
 
   if (!note) {
     return (
@@ -138,6 +143,14 @@ export function NoteInspector({ projectId, note }: NoteInspectorProps) {
             defaultValue={note.content}
             id="content"
             name="content"
+            onChange={(event) => setContent(event.target.value)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <h3 className="text-sm font-medium text-slate-800">Vista previa</h3>
+          <div
+            className="min-h-32 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-800 [&_a]:font-medium [&_a]:text-indigo-700 [&_code]:rounded [&_code]:bg-white [&_code]:px-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-white [&_pre]:p-3 [&_strong]:font-semibold"
+            dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
           />
         </div>
         <div className="grid gap-2">
