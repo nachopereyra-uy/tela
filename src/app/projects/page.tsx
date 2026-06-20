@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/server/auth";
 import { listProjects } from "@/server/projects";
+import { importProjectAction } from "./actions";
 import { NewProjectDialog } from "./new-project-dialog";
 import { ProjectActions } from "./project-actions";
 
@@ -30,6 +31,21 @@ export default async function ProjectsPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <form action={importProjectAction} className="flex items-center gap-2">
+            <input
+              accept="application/json"
+              className="max-w-52 text-sm text-slate-700 file:mr-3 file:h-10 file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:text-sm file:font-medium file:text-slate-800"
+              name="file"
+              required
+              type="file"
+            />
+            <button
+              className="h-10 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+              type="submit"
+            >
+              Importar
+            </button>
+          </form>
           <NewProjectDialog />
           <form action={signOut}>
             <button
