@@ -2,9 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createProject } from "@/server/projects";
+import {
+  createProject,
+  deleteProject,
+  renameProject,
+} from "@/server/projects";
 
 export type CreateProjectState = {
+  error?: string;
+};
+
+export type ProjectActionState = {
   error?: string;
 };
 
@@ -42,4 +50,66 @@ export async function createProjectAction(
   }
 
   redirect(`/projects/${projectId}`);
+}
+
+async function getCurrentUserId() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return user.id;
+}
+
+export async function renameProjectAction(
+  _state: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
+  const userId = await getCurrentUserId();
+  const projectId = formData.get("projectId");
+  const name = formData.get("name");
+
+  if (typeof projectId !== "string" || typeof name !== "string") {
+    return { error: "Revisa los datos del proyecto." };
+  }
+
+  try {
+    const project = await renameProject(userId, projectId, { name });
+
+    if (!project) {
+      return { error: "No encontramos ese proyecto." };
+    }
+  } catch {
+    return { error: "No pudimos renombrar el proyecto." };
+  }
+
+  redirect("/projects");
+}
+
+export async function deleteProjectAction(
+  _state: ProjectActionState,
+  formData: FormData,
+): Promise<ProjectActionState> {
+  const userId = await getCurrentUserId();
+  const projectId = formData.get("projectId");
+
+  if (typeof projectId !== "string") {
+    return { error: "Revisa los datos del proyecto." };
+  }
+
+  try {
+    const project = await deleteProject(userId, projectId);
+
+    if (!project) {
+      return { error: "No encontramos ese proyecto." };
+    }
+  } catch {
+    return { error: "No pudimos eliminar el proyecto." };
+  }
+
+  redirect("/projects");
 }

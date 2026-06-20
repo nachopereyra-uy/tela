@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/server/auth";
 import { listProjects } from "@/server/projects";
 import { NewProjectDialog } from "./new-project-dialog";
+import { ProjectActions } from "./project-actions";
 
 export default async function ProjectsPage() {
   const supabase = await createClient();
@@ -54,22 +55,23 @@ export default async function ProjectsPage() {
       ) : (
         <ul className="grid gap-3 py-8">
           {projects.map((project) => (
-            <li key={project.id}>
+            <li
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
+              key={project.id}
+            >
               <Link
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 transition hover:border-indigo-200 hover:bg-indigo-50"
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-md py-1 transition hover:text-indigo-700"
                 href={`/projects/${project.id}`}
               >
-                <span className="flex items-center gap-3">
-                  <span
-                    className="h-4 w-4 rounded-full"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  <span className="font-medium text-slate-950">
-                    {project.name}
-                  </span>
+                <span
+                  className="h-4 w-4 shrink-0 rounded-full"
+                  style={{ backgroundColor: project.color }}
+                />
+                <span className="truncate font-medium text-slate-950">
+                  {project.name}
                 </span>
-                <span className="text-sm text-slate-500">Abrir</span>
               </Link>
+              <ProjectActions projectId={project.id} projectName={project.name} />
             </li>
           ))}
         </ul>
