@@ -67,6 +67,23 @@ export async function createNoteAction(formData: FormData) {
   redirect(`/projects/${projectId}?note=${note.id}`);
 }
 
+export async function createNoteInLayerAction(formData: FormData) {
+  const userId = await getCurrentUserId();
+  const projectId = z.string().uuid().parse(formData.get("projectId"));
+  const layer = z.enum(NOTE_LAYERS).parse(formData.get("layer"));
+  const note = await createNote(userId, projectId, {
+    title: "Sin titulo",
+    layer,
+  });
+
+  if (!note) {
+    redirect(`/projects/${projectId}`);
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}?note=${note.id}`);
+}
+
 export async function updateNoteAction(
   _state: NoteActionState,
   formData: FormData,

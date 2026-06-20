@@ -8,7 +8,7 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 import { LAYERS, type NoteLayer } from "@/core";
-import { moveNoteLayerAction } from "./actions";
+import { createNoteInLayerAction, moveNoteLayerAction } from "./actions";
 
 type FunnelNote = {
   id: string;
@@ -126,6 +126,16 @@ function FunnelLayer({ layer, notes, projectId }: FunnelLayerProps) {
           </p>
         </div>
       </div>
+      <form action={createNoteInLayerAction} className="mt-4">
+        <input name="projectId" type="hidden" value={projectId} />
+        <input name="layer" type="hidden" value={layer.id} />
+        <button
+          className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+          type="submit"
+        >
+          + Nota
+        </button>
+      </form>
       <ul className="mt-4 grid min-h-14 gap-2">
         {notes.map((note) => (
           <DraggableFunnelNote key={note.id} note={note} projectId={projectId} />
