@@ -32,6 +32,12 @@ const moveNoteLayerSchema = z.object({
   layer: z.enum(NOTE_LAYERS),
 });
 
+const moveNoteStatusSchema = z.object({
+  projectId: z.string().uuid(),
+  noteId: z.string().uuid(),
+  status: z.enum(NOTE_STATUSES),
+});
+
 async function getCurrentUserId() {
   const supabase = await createClient();
   const {
@@ -157,6 +163,24 @@ export async function moveNoteLayerAction(input: {
   const parsed = moveNoteLayerSchema.parse(input);
   const note = await updateNote(userId, parsed.projectId, parsed.noteId, {
     layer: parsed.layer,
+  });
+
+  if (!note) {
+    throw new Error("No pudimos mover la nota.");
+  }
+
+  revalidatePath(`/projects/${parsed.projectId}`);
+}
+
+export async function moveNoteStatusAction(input: {
+  projectId: string;
+  noteId: string;
+  status: string;
+}) {
+  const userId = await getCurrentUserId();
+  const parsed = moveNoteStatusSchema.parse(input);
+  const note = await updateNote(userId, parsed.projectId, parsed.noteId, {
+    status: parsed.status,
   });
 
   if (!note) {
