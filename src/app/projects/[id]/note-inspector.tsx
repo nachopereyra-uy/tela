@@ -118,39 +118,42 @@ export function NoteInspector({
 
   if (!note) {
     return (
-      <aside className="border-l border-slate-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Inspector</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Crea o selecciona una nota para editarla.
-        </p>
+      <aside className="border-l border-line bg-paper overflow-y-auto">
+        <div className="sticky top-0 bg-paper/90 backdrop-blur-sm border-b border-line px-6 py-4">
+          <h2 className="text-base font-semibold text-ink">Inspector</h2>
+        </div>
+        <div className="px-6 py-6">
+          <p className="text-sm text-ink-soft">
+            Crea o selecciona una nota para editarla.
+          </p>
+        </div>
       </aside>
     );
   }
 
   return (
-    <aside className="border-l border-slate-200 bg-white p-6">
-      <form action={updateFormAction} className="grid gap-5">
+    <aside className="border-l border-line bg-paper overflow-y-auto">
+      <div className="sticky top-0 bg-paper/90 backdrop-blur-sm border-b border-line px-6 py-4 flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-ink">Inspector</h2>
+        <button
+          className="h-8 rounded-btn border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50"
+          onClick={() => deleteDialogRef.current?.showModal()}
+          type="button"
+        >
+          Eliminar
+        </button>
+      </div>
+
+      <form action={updateFormAction} className="grid gap-5 px-6 py-6">
         <input name="projectId" type="hidden" value={projectId} />
         <input name="noteId" type="hidden" value={note.id} />
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-950">Inspector</h2>
-            <p className="mt-1 text-sm text-slate-600">Editar nota</p>
-          </div>
-          <button
-            className="h-9 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50"
-            onClick={() => deleteDialogRef.current?.showModal()}
-            type="button"
-          >
-            Eliminar
-          </button>
-        </div>
+
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800" htmlFor="title">
-            Titulo
+          <label className="text-sm font-medium text-ink" htmlFor="title">
+            Título
           </label>
           <input
-            className="h-10 rounded-md border border-slate-300 px-3 text-base outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+            className="h-10 rounded-btn border border-line bg-paper px-3 text-base text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
             defaultValue={note.title}
             id="title"
             maxLength={200}
@@ -160,11 +163,11 @@ export function NoteInspector({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-slate-800" htmlFor="layer">
+            <label className="text-sm font-medium text-ink" htmlFor="layer">
               Capa
             </label>
             <select
-              className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+              className="h-10 rounded-btn border border-line bg-paper px-3 text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
               defaultValue={note.layer}
               id="layer"
               name="layer"
@@ -177,14 +180,11 @@ export function NoteInspector({
             </select>
           </div>
           <div className="grid gap-2">
-            <label
-              className="text-sm font-medium text-slate-800"
-              htmlFor="status"
-            >
+            <label className="text-sm font-medium text-ink" htmlFor="status">
               Estado
             </label>
             <select
-              className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+              className="h-10 rounded-btn border border-line bg-paper px-3 text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
               defaultValue={note.status}
               id="status"
               name="status"
@@ -198,11 +198,11 @@ export function NoteInspector({
           </div>
         </div>
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800" htmlFor="content">
+          <label className="text-sm font-medium text-ink" htmlFor="content">
             Contenido
           </label>
           <textarea
-            className="min-h-56 rounded-md border border-slate-300 px-3 py-2 text-base outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+            className="min-h-56 rounded-btn border border-line bg-[#FCFBF8] px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
             defaultValue={note.content}
             id="content"
             name="content"
@@ -210,25 +210,25 @@ export function NoteInspector({
           />
         </div>
         <div className="grid gap-2">
-          <h3 className="text-sm font-medium text-slate-800">Vista previa</h3>
+          <h3 className="text-sm font-medium text-ink">Vista previa</h3>
           <div
-            className="min-h-32 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-800 [&_a]:font-medium [&_a]:text-indigo-700 [&_code]:rounded [&_code]:bg-white [&_code]:px-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-auto [&_pre]:rounded-md [&_pre]:bg-white [&_pre]:p-3 [&_strong]:font-semibold"
+            className="rounded-card border border-line bg-[#FCFBF8] px-4 py-3 text-sm leading-6 text-ink [&_[data-wikilink]]:text-blue [&_[data-wikilink]]:underline [&_[data-wikilink]]:decoration-blue/30 [&_a]:font-medium [&_a]:text-blue [&_code]:rounded [&_code]:bg-card [&_code]:px-1 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_pre]:overflow-auto [&_pre]:rounded-card [&_pre]:bg-card [&_pre]:p-3 [&_strong]:font-semibold min-h-32"
             dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
             onClick={handlePreviewClick}
           />
           {missingWikilink ? (
             <form
               action={createNoteFromWikilinkAction}
-              className="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2"
+              className="rounded-card border border-blue-soft bg-blue-soft px-4 py-3"
             >
               <input name="projectId" type="hidden" value={projectId} />
               <input name="title" type="hidden" value={missingWikilink} />
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-ink">
                 No existe una nota llamada{" "}
                 <span className="font-medium">{missingWikilink}</span>.
               </p>
               <button
-                className="mt-2 h-9 rounded-md bg-indigo-700 px-3 text-sm font-semibold text-white transition hover:bg-indigo-800"
+                className="mt-2 h-9 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
                 type="submit"
               >
                 Crear nota
@@ -237,36 +237,48 @@ export function NoteInspector({
           ) : null}
         </div>
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800" htmlFor="tags">
+          <label className="text-sm font-medium text-ink" htmlFor="tags">
             Etiquetas
           </label>
           <input
-            className="h-10 rounded-md border border-slate-300 px-3 text-base outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100"
+            className="h-10 rounded-btn border border-line bg-paper px-3 text-base text-ink outline-none transition focus:border-blue focus:ring-2 focus:ring-blue-soft"
             defaultValue={note.tags.join(", ")}
             id="tags"
             name="tags"
           />
+          {note.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {note.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-pill bg-blue-soft px-2.5 py-0.5 text-xs font-semibold text-blue"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <section className="grid gap-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <section className="rounded-card border border-line bg-paper-2 p-4 grid gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">
+            <h3 className="text-sm font-semibold text-ink">
               Enlaces salientes
             </h3>
             {outgoingLinks.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-600">Sin enlaces.</p>
+              <p className="mt-2 text-sm text-ink-soft">Sin enlaces.</p>
             ) : (
               <ul className="mt-2 grid gap-1">
                 {outgoingLinks.map((link) => (
                   <li className="text-sm" key={link.title}>
                     {link.noteId ? (
                       <a
-                        className="font-medium text-indigo-700"
+                        className="font-medium text-blue hover:text-blue-deep transition"
                         href={`/projects/${projectId}?note=${link.noteId}`}
                       >
                         {link.title}
                       </a>
                     ) : (
-                      <span className="text-slate-600">{link.title}</span>
+                      <span className="text-ink-faint">{link.title}</span>
                     )}
                   </li>
                 ))}
@@ -274,15 +286,15 @@ export function NoteInspector({
             )}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">Backlinks</h3>
+            <h3 className="text-sm font-semibold text-ink">Backlinks</h3>
             {backlinks.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-600">Sin backlinks.</p>
+              <p className="mt-2 text-sm text-ink-soft">Sin backlinks.</p>
             ) : (
               <ul className="mt-2 grid gap-1">
                 {backlinks.map((link) => (
                   <li className="text-sm" key={link.id}>
                     <a
-                      className="font-medium text-indigo-700"
+                      className="font-medium text-blue hover:text-blue-deep transition"
                       href={`/projects/${projectId}?note=${link.id}`}
                     >
                       {link.title}
@@ -294,12 +306,12 @@ export function NoteInspector({
           </div>
         </section>
         {updateState.error ? (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="rounded-btn border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {updateState.error}
           </p>
         ) : null}
         <button
-          className="h-10 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="h-10 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep disabled:cursor-not-allowed disabled:opacity-50"
           disabled={updatePending}
           type="submit"
         >
@@ -308,29 +320,29 @@ export function NoteInspector({
       </form>
 
       <dialog
-        className="w-[min(92vw,420px)] rounded-lg border border-slate-200 bg-white p-0 text-slate-950 shadow-xl backdrop:bg-slate-950/30"
+        className="w-[min(92vw,420px)] rounded-dialog border border-line bg-card p-0 text-ink shadow-lift backdrop:bg-ink/20 backdrop:backdrop-blur-sm"
         ref={deleteDialogRef}
       >
-        <form action={deleteFormAction} className="grid gap-5 p-5">
+        <form action={deleteFormAction} className="grid gap-5 p-6">
           <input name="projectId" type="hidden" value={projectId} />
           <input name="noteId" type="hidden" value={note.id} />
           <div>
-            <h2 className="text-lg font-semibold">Eliminar nota</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Tambien se borraran sus conexiones.
+            <h2 className="text-lg font-semibold text-ink">Eliminar nota</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              También se borrarán sus conexiones.
             </p>
           </div>
-          <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800">
+          <p className="rounded-btn border border-line bg-paper px-3 py-2 text-sm font-medium text-ink">
             {note.title}
           </p>
           {deleteState.error ? (
-            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="rounded-btn border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {deleteState.error}
             </p>
           ) : null}
           <div className="flex justify-end gap-2">
             <button
-              className="h-10 rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="h-10 rounded-btn border border-line px-4 text-sm font-medium text-ink-soft transition hover:bg-paper"
               disabled={deletePending}
               formMethod="dialog"
               type="submit"
@@ -338,7 +350,8 @@ export function NoteInspector({
               Cancelar
             </button>
             <button
-              className="h-10 rounded-md bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+              className="h-10 rounded-btn px-4 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ backgroundColor: '#B4452E' }}
               disabled={deletePending}
               type="submit"
             >

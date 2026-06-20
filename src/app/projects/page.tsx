@@ -20,27 +20,22 @@ export default async function ProjectsPage() {
   const projects = await listProjects(user.id);
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-6 py-10">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-6">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-indigo-600">
-            Tela
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-            Proyectos
-          </h1>
-        </div>
+    <main className="min-h-screen bg-paper">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper/80 px-8 py-5 backdrop-blur-sm">
+        <p className="font-display text-2xl text-ink">
+          Tela<span className="inline-block h-[6px] w-[6px] translate-y-[-7px] rounded-full bg-blue align-top ml-0.5" />
+        </p>
         <div className="flex items-center gap-2">
           <form action={importProjectAction} className="flex items-center gap-2">
             <input
               accept="application/json"
-              className="max-w-52 text-sm text-slate-700 file:mr-3 file:h-10 file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:text-sm file:font-medium file:text-slate-800"
+              className="max-w-52 text-sm text-ink-soft file:mr-3 file:h-9 file:rounded-btn file:border file:border-line file:bg-card file:px-3 file:text-sm file:font-medium file:text-ink"
               name="file"
               required
               type="file"
             />
             <button
-              className="h-10 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+              className="h-9 rounded-btn border border-line bg-card px-3 text-sm font-medium text-ink transition hover:shadow-lift"
               type="submit"
             >
               Importar
@@ -49,41 +44,43 @@ export default async function ProjectsPage() {
           <NewProjectDialog />
           <form action={signOut}>
             <button
-              className="h-10 rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+              className="h-9 rounded-btn border border-line bg-card px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
               type="submit"
             >
-              Cerrar sesion
+              Cerrar sesión
             </button>
           </form>
         </div>
       </header>
 
+      <h1 className="text-2xl font-semibold text-ink mt-6 px-8">Proyectos</h1>
+
       {projects.length === 0 ? (
-        <section className="py-16">
-          <h2 className="text-xl font-semibold text-slate-950">
-            No hay proyectos todavia
+        <section className="px-8 py-16">
+          <h2 className="text-xl font-semibold text-ink">
+            No hay proyectos todavía
           </h2>
-          <p className="mt-2 max-w-xl text-slate-600">
+          <p className="mt-2 max-w-xl text-ink-soft">
             Crea el primer proyecto para empezar a ordenar notas por embudo,
             tablero, documento, lienzo y grafo.
           </p>
         </section>
       ) : (
-        <ul className="grid gap-3 py-8">
+        <ul className="grid gap-3 px-8 py-6">
           {projects.map((project) => (
             <li
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-card px-4 py-3 shadow-card hover:shadow-lift transition"
               key={project.id}
             >
               <Link
-                className="flex min-w-0 flex-1 items-center gap-3 rounded-md py-1 transition hover:text-indigo-700"
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-btn py-1 transition"
                 href={`/projects/${project.id}`}
               >
                 <span
                   className="h-4 w-4 shrink-0 rounded-full"
                   style={{ backgroundColor: project.color }}
                 />
-                <span className="truncate font-medium text-slate-950">
+                <span className="truncate font-medium text-ink">
                   {project.name}
                 </span>
               </Link>

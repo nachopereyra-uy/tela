@@ -31,6 +31,14 @@ const statusLabels: Record<NoteStatus, string> = {
   none: "Sin estado",
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  todo: 'var(--todo)',
+  doing: 'var(--doing)',
+  done: 'var(--done)',
+  idea: 'var(--idea)',
+  none: 'var(--ink-faint)',
+};
+
 export function BoardView({ notes, presentMode, projectId }: BoardViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
@@ -81,11 +89,11 @@ export function BoardView({ notes, presentMode, projectId }: BoardViewProps) {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <section className="border-t border-slate-200 py-8">
+      <section className="border-t border-line py-8">
         {!presentMode && (
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-slate-950">Tablero</h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <h2 className="text-xl font-semibold text-ink">Tablero</h2>
+            <p className="mt-1 text-sm text-ink-soft">
               Las notas agrupadas por estado.
             </p>
           </div>
@@ -115,21 +123,27 @@ function BoardColumn({ notes, projectId, status }: BoardColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: status,
   });
+  const color = STATUS_COLORS[status] ?? 'var(--ink-faint)';
 
   return (
     <section
-      className={`rounded-lg border bg-white p-4 transition ${
-        isOver ? "border-indigo-400" : "border-slate-200"
-      }`}
+      className="rounded-card border border-line bg-paper-2 p-3 min-h-[200px] transition"
+      style={{ borderColor: isOver ? color : undefined }}
       ref={setNodeRef}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-semibold text-slate-950">{statusLabels[status]}</h3>
-        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-1.5">
+          <span style={{ color, fontSize: 16, lineHeight: 1 }}>●</span>
+          <h3 className="text-sm font-semibold text-ink">{statusLabels[status]}</h3>
+        </div>
+        <span
+          className="rounded-pill px-2 py-0.5 text-xs font-medium"
+          style={{ background: 'var(--line)', color: 'var(--ink-soft)' }}
+        >
           {notes.length}
         </span>
       </div>
-      <ul className="mt-4 grid min-h-14 gap-2">
+      <ul className="grid gap-2">
         {notes.map((note) => (
           <DraggableBoardNote key={note.id} note={note} projectId={projectId} />
         ))}
@@ -161,10 +175,10 @@ function DraggableBoardNote({
       ref={setNodeRef}
       style={style}
     >
-      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
+      <div className="rounded-btn border border-line bg-card px-3 py-2 shadow-card hover:shadow-lift transition">
         <div className="flex items-start gap-2">
           <button
-            className="mt-0.5 h-7 w-7 shrink-0 cursor-grab rounded-md border border-slate-200 text-slate-500 active:cursor-grabbing"
+            className="mt-0.5 h-7 w-7 shrink-0 cursor-grab rounded-btn border border-line text-ink-faint active:cursor-grabbing"
             type="button"
             {...listeners}
             {...attributes}
@@ -172,13 +186,13 @@ function DraggableBoardNote({
             ::
           </button>
           <a
-            className="min-w-0 flex-1 transition hover:text-indigo-700"
+            className="min-w-0 flex-1 transition hover:text-blue"
             href={`/projects/${projectId}?note=${note.id}`}
           >
-            <span className="block truncate text-sm font-medium text-slate-800">
+            <span className="block truncate text-sm font-medium text-ink">
               {note.title}
             </span>
-            <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">
+            <span className="mt-1 line-clamp-2 block text-xs leading-5 text-ink-soft">
               {note.content || "Sin contenido"}
             </span>
           </a>

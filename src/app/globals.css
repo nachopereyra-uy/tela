@@ -1,13 +1,93 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #111827;
+@theme {
+  --color-paper: #FAF8F3;
+  --color-paper-2: #F3EFE6;
+  --color-card: #FFFFFF;
+  --color-ink: #1E1B16;
+  --color-ink-soft: #6B6458;
+  --color-ink-faint: #9A9384;
+  --color-line: #E5DFD2;
+  --color-line-strong: #D6CEBC;
+  --color-blue: #3457D5;
+  --color-blue-deep: #2742A8;
+  --color-blue-soft: #E9EDFC;
+  --color-todo: #C98A2B;
+  --color-doing: #3457D5;
+  --color-done: #3E9D6B;
+  --color-idea: #8A5BD6;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --shadow-card: 0 1px 2px rgba(30,27,22,.05), 0 6px 18px rgba(30,27,22,.06);
+  --shadow-lift: 0 8px 28px rgba(30,27,22,.14);
+  --radius-btn: 9px;
+  --radius-card: 12px;
+  --radius-dialog: 16px;
+  --radius-pill: 20px;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --paper: #FAF8F3;
+  --paper-2: #F3EFE6;
+  --card: #FFFFFF;
+  --ink: #1E1B16;
+  --ink-soft: #6B6458;
+  --ink-faint: #9A9384;
+  --line: #E5DFD2;
+  --line-strong: #D6CEBC;
+  --blue: #3457D5;
+  --blue-deep: #2742A8;
+  --blue-soft: #E9EDFC;
+  --todo: #C98A2B;
+  --doing: #3457D5;
+  --done: #3E9D6B;
+  --idea: #8A5BD6;
+  --l-marketing: #E0653E;
+  --l-ventas: #DD933E;
+  --l-cierre: #C7A93A;
+  --l-onboarding: #4FA06B;
+  --l-entrega: #2F8FA3;
+  --l-posventa: #5B6AD0;
+  --shadow: 0 1px 2px rgba(30,27,22,.05), 0 6px 18px rgba(30,27,22,.06);
+  --shadow-lift: 0 8px 28px rgba(30,27,22,.14);
 }
+
+*,*::before,*::after { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: var(--blue-soft); color: var(--ink); }
+
+/* ── React Flow ── */
+.react-flow { background: var(--paper) !important; }
+.react-flow__background { color: var(--line-strong) !important; }
+.react-flow__edge-path {
+  stroke: var(--blue);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+.react-flow__edge.wikilink .react-flow__edge-path {
+  stroke: var(--idea);
+  stroke-dasharray: 5 4;
+  opacity: 0.7;
+}
+.react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: white !important;
+  border: 2px solid var(--blue) !important;
+  border-radius: 50% !important;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.react-flow__node:hover .react-flow__handle,
+.react-flow__node.selected .react-flow__handle { opacity: 1; }
+.react-flow__controls { background: var(--card); border: 1px solid var(--line); border-radius: 9px; box-shadow: var(--shadow); }
+.react-flow__controls-button { border-color: var(--line) !important; color: var(--ink-soft) !important; }
+.react-flow__minimap { border: 1px solid var(--line); border-radius: 9px; }

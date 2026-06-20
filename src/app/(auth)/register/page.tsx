@@ -3,25 +3,21 @@ import { signUp } from "@/server/auth";
 
 export default function RegisterPage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-16">
-      <p className="text-sm font-medium uppercase tracking-wide text-indigo-600">
-        Tela
-      </p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-        Crear cuenta
-      </h1>
-      <p className="mt-3 text-sm leading-6 text-slate-600">
-        Registra tu usuario para empezar.
-      </p>
-      <AuthForm
-        action={signUp}
-        alternate={{
-          href: "/login",
-          label: "Inicia sesion",
-          text: "Ya tienes cuenta?",
-        }}
-        submitLabel="Registrarme"
-      />
+    <main className="flex min-h-screen flex-col items-center justify-center bg-paper px-6 py-16">
+      <div className="w-full max-w-sm rounded-dialog border border-line bg-card p-8 shadow-lift">
+        <div className="mb-8">
+          <p className="font-display text-3xl text-ink">
+            Tela<span className="inline-block h-[7px] w-[7px] translate-y-[-8px] rounded-full bg-blue align-top ml-0.5" />
+          </p>
+          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink">Crear cuenta</h1>
+          <p className="mt-1.5 text-sm text-ink-soft">Registrate para empezar.</p>
+        </div>
+        <AuthForm
+          action={signUp}
+          alternate={{ href: "/login", label: "Iniciá sesión", text: "¿Ya tenés cuenta?" }}
+          submitLabel="Registrarme"
+        />
+      </div>
     </main>
   );
 }

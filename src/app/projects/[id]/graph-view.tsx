@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import {
   Background,
+  BackgroundVariant,
   Controls,
   ReactFlow,
   type Edge as FlowEdge,
@@ -13,6 +14,7 @@ import {
 type GraphNote = {
   id: string;
   title: string;
+  status: string;
 };
 
 type ExplicitGraphEdge = {
@@ -35,6 +37,14 @@ type GraphViewProps = {
   wikilinkEdges: WikilinkGraphEdge[];
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  todo: 'var(--todo)',
+  doing: 'var(--doing)',
+  done: 'var(--done)',
+  idea: 'var(--idea)',
+  none: 'var(--ink-faint)',
+};
+
 export function GraphView({
   explicitEdges,
   notes,
@@ -55,6 +65,16 @@ export function GraphView({
           x: Math.round(Math.cos(angle) * radius + radius),
           y: Math.round(Math.sin(angle) * radius + radius),
         },
+        style: {
+          background: STATUS_COLORS[note.status] ?? 'var(--ink-faint)',
+          color: 'white',
+          border: 'none',
+          borderRadius: 9,
+          fontSize: 12,
+          fontWeight: 500,
+          padding: '6px 12px',
+          boxShadow: 'var(--shadow)',
+        },
       };
     });
   }, [notes]);
@@ -72,8 +92,8 @@ export function GraphView({
         source: edge.fromNoteId,
         target: edge.toNoteId,
         label: edge.title,
-        animated: true,
-        style: { strokeDasharray: "4 4" },
+        className: 'wikilink',
+        animated: false,
       })),
     ],
     [explicitEdges, wikilinkEdges],
@@ -84,16 +104,16 @@ export function GraphView({
   };
 
   return (
-    <section className="border-t border-slate-200 py-8">
+    <section className="border-t border-line py-8">
       {!presentMode && (
         <div className="mb-5">
-          <h2 className="text-xl font-semibold text-slate-950">Grafo</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <h2 className="text-xl font-semibold text-ink">Grafo</h2>
+          <p className="mt-1 text-sm text-ink-soft">
             Conexiones explícitas y enlaces de documentos.
           </p>
         </div>
       )}
-      <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white ${presentMode ? "h-[80vh]" : "h-[520px]"}`}>
+      <div className={`overflow-hidden rounded-card border border-line ${presentMode ? "h-[80vh]" : "h-[520px]"}`}>
         <ReactFlow
           edges={edges}
           fitView
@@ -102,7 +122,7 @@ export function GraphView({
           onNodeClick={handleNodeClick}
           proOptions={{ hideAttribution: true }}
         >
-          <Background />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={1.1} color="var(--line-strong)" />
           <Controls />
         </ReactFlow>
       </div>

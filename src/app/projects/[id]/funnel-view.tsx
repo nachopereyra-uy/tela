@@ -22,6 +22,17 @@ type FunnelViewProps = {
   projectId: string;
 };
 
+const LAYER_COLORS: Record<string, string> = {
+  marketing: 'var(--l-marketing)',
+  ventas: 'var(--l-ventas)',
+  cierre: 'var(--l-cierre)',
+  onboarding: 'var(--l-onboarding)',
+  entrega: 'var(--l-entrega)',
+  posventa: 'var(--l-posventa)',
+};
+
+const LAYER_GRADIENT = `linear-gradient(to bottom, var(--l-marketing), var(--l-ventas), var(--l-cierre), var(--l-onboarding), var(--l-entrega), var(--l-posventa))`;
+
 export function FunnelView({ notes, presentMode, projectId }: FunnelViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
@@ -76,25 +87,35 @@ export function FunnelView({ notes, presentMode, projectId }: FunnelViewProps) {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <section className="border-t border-slate-200 py-8">
+      <section className="border-t border-line py-8">
         {!presentMode && (
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-slate-950">Embudo</h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <h2 className="text-xl font-semibold text-ink">Embudo</h2>
+            <p className="mt-1 text-sm text-ink-soft">
               Las seis capas del negocio con sus notas asignadas.
             </p>
           </div>
         )}
-        <div className="grid gap-3 xl:grid-cols-2">
-          {LAYERS.map((layer) => (
-            <FunnelLayer
-              key={layer.id}
-              layer={layer}
-              notes={notesByLayer.get(layer.id) ?? []}
-              presentMode={presentMode}
-              projectId={projectId}
+        <div className="flex gap-3">
+          {/* Vertical spine */}
+          <div className="flex flex-col items-center" style={{ width: 40 }}>
+            <div
+              className="w-1 flex-1 rounded-full"
+              style={{ background: LAYER_GRADIENT, minHeight: 200 }}
             />
-          ))}
+          </div>
+          {/* Layer bands */}
+          <div className="flex-1 grid gap-3">
+            {LAYERS.map((layer) => (
+              <FunnelLayer
+                key={layer.id}
+                layer={layer}
+                notes={notesByLayer.get(layer.id) ?? []}
+                presentMode={presentMode}
+                projectId={projectId}
+              />
+            ))}
+          </div>
         </div>
       </section>
     </DndContext>
@@ -112,21 +133,43 @@ function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps)
   const { isOver, setNodeRef } = useDroppable({
     id: layer.id,
   });
+  const layerColor = LAYER_COLORS[layer.id] ?? 'var(--ink-faint)';
 
   return (
     <section
-      className={`rounded-lg border bg-white p-4 transition ${
-        isOver ? "border-indigo-400" : "border-slate-200"
-      }`}
+      className="rounded-card border bg-card p-4 shadow-card transition"
+      style={{ borderColor: isOver ? layerColor : 'var(--line)' }}
       ref={setNodeRef}
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm font-semibold text-indigo-700">
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+          style={{
+            border: `2px solid ${layerColor}`,
+            color: layerColor,
+            background: 'var(--paper)',
+          }}
+        >
           {layer.number}
         </span>
-        <div>
-          <h3 className="font-semibold text-slate-950">{layer.name}</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block h-[3px] w-5 rounded-full shrink-0"
+              style={{ background: layerColor }}
+            />
+            <h3 className="font-semibold text-ink">{layer.name}</h3>
+            <span
+              className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-pill"
+              style={{
+                background: 'var(--paper-2)',
+                color: 'var(--ink-soft)',
+              }}
+            >
+              {notes.length}
+            </span>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-ink-soft">
             {layer.question}
           </p>
         </div>
@@ -136,7 +179,7 @@ function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps)
           <input name="projectId" type="hidden" value={projectId} />
           <input name="layer" type="hidden" value={layer.id} />
           <button
-            className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+            className="h-9 rounded-btn border border-line bg-paper px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
             type="submit"
           >
             + Nota
@@ -145,7 +188,7 @@ function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps)
       )}
       <ul className="mt-4 grid min-h-14 gap-2">
         {notes.map((note) => (
-          <DraggableFunnelNote key={note.id} note={note} projectId={projectId} />
+          <DraggableFunnelNote key={note.id} note={note} projectId={projectId} layerColor={layerColor} />
         ))}
       </ul>
     </section>
@@ -155,9 +198,11 @@ function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps)
 function DraggableFunnelNote({
   note,
   projectId,
+  layerColor,
 }: {
   note: FunnelNote;
   projectId: string;
+  layerColor: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -175,10 +220,13 @@ function DraggableFunnelNote({
       ref={setNodeRef}
       style={style}
     >
-      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
+      <div
+        className="rounded-btn border border-line bg-card px-3 py-2 shadow-card"
+        style={{ borderLeftWidth: 3, borderLeftColor: layerColor }}
+      >
         <div className="flex items-center gap-2">
           <button
-            className="h-7 w-7 cursor-grab rounded-md border border-slate-200 text-slate-500 active:cursor-grabbing"
+            className="h-7 w-7 cursor-grab rounded-btn border border-line text-ink-faint active:cursor-grabbing"
             type="button"
             {...listeners}
             {...attributes}
@@ -186,7 +234,7 @@ function DraggableFunnelNote({
             ::
           </button>
           <a
-            className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 transition hover:text-indigo-700"
+            className="min-w-0 flex-1 truncate text-sm font-medium text-ink transition hover:text-blue"
             href={`/projects/${projectId}?note=${note.id}`}
           >
             {note.title}

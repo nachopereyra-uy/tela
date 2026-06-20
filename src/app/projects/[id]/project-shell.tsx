@@ -72,13 +72,13 @@ export function ProjectShell({
 
   if (presentMode) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
-          <span className="text-sm font-medium text-slate-600">
+      <div className="min-h-screen bg-paper-2">
+        <div className="flex items-center justify-between border-b border-line bg-paper-2 px-6 py-3">
+          <span className="text-sm font-semibold text-ink">
             {project.name}
           </span>
           <button
-            className="h-8 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="h-8 rounded-btn border border-line px-4 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
             onClick={() => setPresentMode(false)}
             type="button"
           >
@@ -115,37 +115,37 @@ export function ProjectShell({
   }
 
   return (
-    <main className="grid min-h-screen grid-cols-[minmax(0,1fr)_420px] bg-slate-50">
-      <section className="px-6 py-10">
-        <Link className="text-sm font-medium text-indigo-700" href="/projects">
-          Proyectos
-        </Link>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-6">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-wide text-indigo-600">
-              Proyecto
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-              {project.name}
-            </h1>
+    <main className="grid min-h-screen grid-cols-[minmax(0,1fr)_400px] bg-paper">
+      <section className="flex flex-col">
+        {/* Topbar */}
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-paper/80 backdrop-blur-sm px-6 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link
+              className="shrink-0 text-sm text-ink-soft transition hover:text-ink"
+              href="/projects"
+            >
+              ← Proyectos
+            </Link>
+            <span className="text-ink-faint">/</span>
+            <span className="truncate font-semibold text-ink">{project.name}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <input
-              className="h-10 w-52 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="h-9 w-44 rounded-btn border border-line bg-paper px-3 text-sm placeholder:text-ink-faint focus:border-blue focus:bg-card focus:ring-2 focus:ring-blue-soft outline-none transition"
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por título o etiqueta…"
+              placeholder="Buscar…"
               type="search"
               value={search}
             />
             <button
-              className="flex h-10 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+              className="h-9 rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
               onClick={() => setPresentMode(true)}
               type="button"
             >
               Presentar
             </button>
             <a
-              className="flex h-10 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+              className="flex h-9 items-center rounded-btn border border-line-strong px-3 text-sm font-medium text-ink-soft transition hover:bg-card hover:text-ink"
               href={`/projects/${project.id}/export`}
             >
               Exportar JSON
@@ -153,7 +153,7 @@ export function ProjectShell({
             <form action={createNoteAction}>
               <input name="projectId" type="hidden" value={project.id} />
               <button
-                className="h-10 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="h-9 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep"
                 type="submit"
               >
                 Nueva nota
@@ -162,60 +162,63 @@ export function ProjectShell({
           </div>
         </div>
 
-        {notes.length === 0 ? (
-          <section className="py-16">
-            <h2 className="text-xl font-semibold text-slate-950">
-              No hay notas todavía
-            </h2>
-            <p className="mt-2 max-w-xl text-slate-600">
-              Crea una nota para editar su título, contenido, capa, estado y
-              etiquetas.
-            </p>
-          </section>
-        ) : filteredNotes.length === 0 ? (
-          <section className="py-16">
-            <h2 className="text-xl font-semibold text-slate-950">
-              Sin resultados
-            </h2>
-            <p className="mt-2 max-w-xl text-slate-600">
-              Ninguna nota coincide con &ldquo;{search}&rdquo;.
-            </p>
-          </section>
-        ) : (
-          <ul className="grid gap-3 py-8">
-            {filteredNotes.map((note) => (
-              <li key={note.id}>
-                <Link
-                  className={`block rounded-lg border bg-white px-4 py-3 transition hover:border-indigo-200 hover:bg-indigo-50 ${
-                    selectedNoteId === note.id
-                      ? "border-indigo-300"
-                      : "border-slate-200"
-                  }`}
-                  href={`/projects/${project.id}?note=${note.id}`}
-                >
-                  <h2 className="font-medium text-slate-950">{note.title}</h2>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">
-                    {note.content || "Sin contenido"}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Note list + views */}
+        <div className="px-6 py-6">
+          {notes.length === 0 ? (
+            <section className="py-12">
+              <h2 className="text-xl font-semibold text-ink">
+                No hay notas todavía
+              </h2>
+              <p className="mt-2 max-w-xl text-ink-soft">
+                Crea una nota para editar su título, contenido, capa, estado y
+                etiquetas.
+              </p>
+            </section>
+          ) : filteredNotes.length === 0 ? (
+            <section className="py-12">
+              <h2 className="text-xl font-semibold text-ink">
+                Sin resultados
+              </h2>
+              <p className="mt-2 max-w-xl text-ink-soft">
+                Ninguna nota coincide con &ldquo;{search}&rdquo;.
+              </p>
+            </section>
+          ) : (
+            <ul className="grid gap-2">
+              {filteredNotes.map((note) => (
+                <li key={note.id}>
+                  <Link
+                    className={`block rounded-card border bg-card px-4 py-3 shadow-card transition hover:shadow-lift ${
+                      selectedNoteId === note.id
+                        ? "border-blue ring-2 ring-blue-soft"
+                        : "border-line"
+                    }`}
+                    href={`/projects/${project.id}?note=${note.id}`}
+                  >
+                    <h2 className="font-medium text-ink">{note.title}</h2>
+                    <p className="mt-1 line-clamp-2 text-sm text-ink-soft">
+                      {note.content || "Sin contenido"}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <FunnelView notes={filteredNotes} projectId={project.id} />
-        <BoardView notes={filteredNotes} projectId={project.id} />
-        <CanvasView
-          edges={explicitEdges}
-          notes={notes}
-          projectId={project.id}
-        />
-        <GraphView
-          explicitEdges={explicitEdges}
-          notes={notes}
-          projectId={project.id}
-          wikilinkEdges={wikilinkEdges}
-        />
+          <FunnelView notes={filteredNotes} projectId={project.id} />
+          <BoardView notes={filteredNotes} projectId={project.id} />
+          <CanvasView
+            edges={explicitEdges}
+            notes={notes}
+            projectId={project.id}
+          />
+          <GraphView
+            explicitEdges={explicitEdges}
+            notes={notes}
+            projectId={project.id}
+            wikilinkEdges={wikilinkEdges}
+          />
+        </div>
       </section>
       <NoteInspector
         backlinks={backlinks}
