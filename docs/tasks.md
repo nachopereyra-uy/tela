@@ -38,7 +38,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 
 ## Etapa 4 · Tablero
 
-- [ ] **T4.1 — Render del tablero.** Columnas por estado con sus notas. *Hecho cuando:* se agrupan por estado.
+- [x] **T4.1 — Render del tablero.** Columnas por estado con sus notas. *Hecho cuando:* se agrupan por estado.
 - [ ] **T4.2 — Mover entre columnas.** Arrastrar cambia `status` y persiste. *Hecho cuando:* sobrevive a recarga.
 
 ## Etapa 5 · Documentos
