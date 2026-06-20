@@ -69,3 +69,10 @@ export async function signUp(
 
   redirect("/projects");
 }
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+
+  redirect("/login");
+}
