@@ -114,12 +114,20 @@ export default async function ProjectPage({
           </div>
           <form action={createNoteAction}>
             <input name="projectId" type="hidden" value={project.id} />
-            <button
-              className="h-10 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
-              type="submit"
-            >
-              Nueva nota
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                className="flex h-10 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+                href={`/projects/${project.id}/export`}
+              >
+                Exportar JSON
+              </a>
+              <button
+                className="h-10 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="submit"
+              >
+                Nueva nota
+              </button>
+            </div>
           </form>
         </div>
 
