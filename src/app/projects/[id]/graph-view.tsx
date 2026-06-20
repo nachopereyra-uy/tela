@@ -30,6 +30,7 @@ type WikilinkGraphEdge = {
 type GraphViewProps = {
   explicitEdges: ExplicitGraphEdge[];
   notes: GraphNote[];
+  presentMode?: boolean;
   projectId: string;
   wikilinkEdges: WikilinkGraphEdge[];
 };
@@ -37,6 +38,7 @@ type GraphViewProps = {
 export function GraphView({
   explicitEdges,
   notes,
+  presentMode,
   projectId,
   wikilinkEdges,
 }: GraphViewProps) {
@@ -83,13 +85,15 @@ export function GraphView({
 
   return (
     <section className="border-t border-slate-200 py-8">
-      <div className="mb-5">
-        <h2 className="text-xl font-semibold text-slate-950">Grafo</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Conexiones explicitas y enlaces de documentos.
-        </p>
-      </div>
-      <div className="h-[520px] overflow-hidden rounded-lg border border-slate-200 bg-white">
+      {!presentMode && (
+        <div className="mb-5">
+          <h2 className="text-xl font-semibold text-slate-950">Grafo</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Conexiones explícitas y enlaces de documentos.
+          </p>
+        </div>
+      )}
+      <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white ${presentMode ? "h-[80vh]" : "h-[520px]"}`}>
         <ReactFlow
           edges={edges}
           fitView

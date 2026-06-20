@@ -30,10 +30,11 @@ type CanvasViewProps = {
     toNoteId: string;
   }>;
   notes: CanvasNote[];
+  presentMode?: boolean;
   projectId: string;
 };
 
-export function CanvasView({ edges, notes, projectId }: CanvasViewProps) {
+export function CanvasView({ edges, notes, presentMode, projectId }: CanvasViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [localEdges, setLocalEdges] = useState<FlowEdge[]>(
     edges.map((edge) => ({
@@ -121,13 +122,15 @@ export function CanvasView({ edges, notes, projectId }: CanvasViewProps) {
 
   return (
     <section className="border-t border-slate-200 py-8">
-      <div className="mb-5">
-        <h2 className="text-xl font-semibold text-slate-950">Lienzo</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Nodos posicionables con pan y zoom.
-        </p>
-      </div>
-      <div className="h-[520px] overflow-hidden rounded-lg border border-slate-200 bg-white">
+      {!presentMode && (
+        <div className="mb-5">
+          <h2 className="text-xl font-semibold text-slate-950">Lienzo</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Nodos posicionables con pan y zoom.
+          </p>
+        </div>
+      )}
+      <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white ${presentMode ? "h-[80vh]" : "h-[520px]"}`}>
         <ReactFlow
           edges={localEdges}
           fitView

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   backlinks,
@@ -13,12 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 import { listEdges } from "@/server/edges";
 import { listNotes } from "@/server/notes";
 import { getProject } from "@/server/projects";
-import { createNoteAction } from "./actions";
-import { BoardView } from "./board-view";
-import { CanvasView } from "./canvas-view";
-import { FunnelView } from "./funnel-view";
-import { GraphView } from "./graph-view";
-import { NoteInspector, type InspectorNote } from "./note-inspector";
+import { type InspectorNote } from "./note-inspector";
+import { ProjectShell, type ShellEdge, type ShellNote } from "./project-shell";
 
 type ProjectPageProps = {
   params: Promise<{
@@ -53,6 +48,29 @@ function toCoreNote(note: Awaited<ReturnType<typeof listNotes>>[number]): Note {
     tags: note.tags,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
+  };
+}
+
+function toShellNote(note: Awaited<ReturnType<typeof listNotes>>[number]): ShellNote {
+  return {
+    id: note.id,
+    projectId: note.projectId,
+    title: note.title,
+    content: note.content,
+    status: note.status,
+    layer: note.layer,
+    x: note.x,
+    y: note.y,
+    tags: note.tags,
+  };
+}
+
+function toShellEdge(edge: Awaited<ReturnType<typeof listEdges>>[number]): ShellEdge {
+  return {
+    id: edge.id,
+    fromNoteId: edge.fromNoteId,
+    toNoteId: edge.toNoteId,
+    label: edge.label,
   };
 }
 
@@ -98,94 +116,15 @@ export default async function ProjectPage({
   const derivedWikilinkEdges = wikilinkEdges(coreNotes);
 
   return (
-    <main className="grid min-h-screen grid-cols-[minmax(0,1fr)_420px] bg-slate-50">
-      <section className="px-6 py-10">
-        <Link className="text-sm font-medium text-indigo-700" href="/projects">
-          Proyectos
-        </Link>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-6">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-wide text-indigo-600">
-              Proyecto
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-              {project.name}
-            </h1>
-          </div>
-          <form action={createNoteAction}>
-            <input name="projectId" type="hidden" value={project.id} />
-            <div className="flex items-center gap-2">
-              <a
-                className="flex h-10 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
-                href={`/projects/${project.id}/export`}
-              >
-                Exportar JSON
-              </a>
-              <button
-                className="h-10 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
-                type="submit"
-              >
-                Nueva nota
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {notes.length === 0 ? (
-          <section className="py-16">
-            <h2 className="text-xl font-semibold text-slate-950">
-              No hay notas todavia
-            </h2>
-            <p className="mt-2 max-w-xl text-slate-600">
-              Crea una nota para editar su titulo, contenido, capa, estado y
-              etiquetas.
-            </p>
-          </section>
-        ) : (
-          <ul className="grid gap-3 py-8">
-            {notes.map((note) => (
-              <li key={note.id}>
-                <Link
-                  className={`block rounded-lg border bg-white px-4 py-3 transition hover:border-indigo-200 hover:bg-indigo-50 ${
-                    selectedNote?.id === note.id
-                      ? "border-indigo-300"
-                      : "border-slate-200"
-                  }`}
-                  href={`/projects/${project.id}?note=${note.id}`}
-                >
-                  <h2 className="font-medium text-slate-950">{note.title}</h2>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">
-                    {note.content || "Sin contenido"}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        <FunnelView notes={notes} projectId={project.id} />
-        <BoardView notes={notes} projectId={project.id} />
-        <CanvasView
-          edges={explicitEdges}
-          notes={notes}
-          projectId={project.id}
-        />
-        <GraphView
-          explicitEdges={explicitEdges}
-          notes={notes}
-          projectId={project.id}
-          wikilinkEdges={derivedWikilinkEdges}
-        />
-      </section>
-      <NoteInspector
-        backlinks={selectedBacklinks}
-        note={selectedNote ? toInspectorNote(selectedNote) : null}
-        outgoingLinks={selectedOutgoingLinks}
-        projectId={project.id}
-        wikilinkTargets={notes.map((note) => ({
-          id: note.id,
-          title: note.title,
-        }))}
-      />
-    </main>
+    <ProjectShell
+      backlinks={selectedBacklinks}
+      explicitEdges={explicitEdges.map(toShellEdge)}
+      inspectorNote={selectedNote ? toInspectorNote(selectedNote) : null}
+      notes={notes.map(toShellNote)}
+      outgoingLinks={selectedOutgoingLinks}
+      project={{ id: project.id, name: project.name }}
+      selectedNoteId={selectedNote?.id ?? null}
+      wikilinkEdges={derivedWikilinkEdges}
+    />
   );
 }

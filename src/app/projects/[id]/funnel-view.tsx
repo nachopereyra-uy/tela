@@ -18,10 +18,11 @@ type FunnelNote = {
 
 type FunnelViewProps = {
   notes: FunnelNote[];
+  presentMode?: boolean;
   projectId: string;
 };
 
-export function FunnelView({ notes, projectId }: FunnelViewProps) {
+export function FunnelView({ notes, presentMode, projectId }: FunnelViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
   const notesByLayer = useMemo(() => {
@@ -76,18 +77,21 @@ export function FunnelView({ notes, projectId }: FunnelViewProps) {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <section className="border-t border-slate-200 py-8">
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold text-slate-950">Embudo</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Las seis capas del negocio con sus notas asignadas.
-          </p>
-        </div>
+        {!presentMode && (
+          <div className="mb-5">
+            <h2 className="text-xl font-semibold text-slate-950">Embudo</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Las seis capas del negocio con sus notas asignadas.
+            </p>
+          </div>
+        )}
         <div className="grid gap-3 xl:grid-cols-2">
           {LAYERS.map((layer) => (
             <FunnelLayer
               key={layer.id}
               layer={layer}
               notes={notesByLayer.get(layer.id) ?? []}
+              presentMode={presentMode}
               projectId={projectId}
             />
           ))}
@@ -100,10 +104,11 @@ export function FunnelView({ notes, projectId }: FunnelViewProps) {
 type FunnelLayerProps = {
   layer: (typeof LAYERS)[number];
   notes: FunnelNote[];
+  presentMode?: boolean;
   projectId: string;
 };
 
-function FunnelLayer({ layer, notes, projectId }: FunnelLayerProps) {
+function FunnelLayer({ layer, notes, presentMode, projectId }: FunnelLayerProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: layer.id,
   });
@@ -126,16 +131,18 @@ function FunnelLayer({ layer, notes, projectId }: FunnelLayerProps) {
           </p>
         </div>
       </div>
-      <form action={createNoteInLayerAction} className="mt-4">
-        <input name="projectId" type="hidden" value={projectId} />
-        <input name="layer" type="hidden" value={layer.id} />
-        <button
-          className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
-          type="submit"
-        >
-          + Nota
-        </button>
-      </form>
+      {!presentMode && (
+        <form action={createNoteInLayerAction} className="mt-4">
+          <input name="projectId" type="hidden" value={projectId} />
+          <input name="layer" type="hidden" value={layer.id} />
+          <button
+            className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+            type="submit"
+          >
+            + Nota
+          </button>
+        </form>
+      )}
       <ul className="mt-4 grid min-h-14 gap-2">
         {notes.map((note) => (
           <DraggableFunnelNote key={note.id} note={note} projectId={projectId} />

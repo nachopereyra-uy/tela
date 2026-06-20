@@ -19,6 +19,7 @@ type BoardNote = {
 
 type BoardViewProps = {
   notes: BoardNote[];
+  presentMode?: boolean;
   projectId: string;
 };
 
@@ -30,7 +31,7 @@ const statusLabels: Record<NoteStatus, string> = {
   none: "Sin estado",
 };
 
-export function BoardView({ notes, projectId }: BoardViewProps) {
+export function BoardView({ notes, presentMode, projectId }: BoardViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
   const notesByStatus = useMemo(() => {
@@ -81,12 +82,14 @@ export function BoardView({ notes, projectId }: BoardViewProps) {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <section className="border-t border-slate-200 py-8">
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold text-slate-950">Tablero</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Las notas agrupadas por estado.
-          </p>
-        </div>
+        {!presentMode && (
+          <div className="mb-5">
+            <h2 className="text-xl font-semibold text-slate-950">Tablero</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Las notas agrupadas por estado.
+            </p>
+          </div>
+        )}
         <div className="grid gap-3 xl:grid-cols-5">
           {NOTE_STATUSES.map((status) => (
             <BoardColumn
