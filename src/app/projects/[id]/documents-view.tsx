@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, useActionState, useEffect, useRef, useState } from "react";
+import { type MouseEvent, useActionState, useEffect, useState } from "react";
 import { backlinks, findByTitle, markdownToHtml, outgoingLinks, type NoteLayer, type NoteStatus } from "@/core";
 import type { ShellNote } from "./project-shell";
 import {

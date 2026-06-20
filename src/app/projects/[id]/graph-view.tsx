@@ -32,7 +32,6 @@ type WikilinkGraphEdge = {
 type GraphViewProps = {
   explicitEdges: ExplicitGraphEdge[];
   notes: GraphNote[];
-  presentMode?: boolean;
   projectId: string;
   wikilinkEdges: WikilinkGraphEdge[];
   onNoteSelect?: (id: string) => void;
@@ -49,7 +48,6 @@ const STATUS_COLORS: Record<string, string> = {
 export function GraphView({
   explicitEdges,
   notes,
-  presentMode,
   projectId,
   wikilinkEdges,
   onNoteSelect,

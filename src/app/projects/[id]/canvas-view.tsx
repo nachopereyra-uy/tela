@@ -37,7 +37,6 @@ type CanvasViewProps = {
     toNoteId: string;
   }>;
   notes: CanvasNote[];
-  presentMode?: boolean;
   projectId: string;
   onNoteSelect?: (id: string) => void;
   onEdgeCreate?: (edge: ShellEdge) => void;
@@ -120,7 +119,7 @@ function NoteNode({ data, selected }: NodeProps & { data: NoteNodeData }) {
   );
 }
 
-export function CanvasView({ edges, notes, presentMode, projectId, onNoteSelect, onEdgeCreate, onEdgeDelete }: CanvasViewProps) {
+export function CanvasView({ edges, notes, projectId, onNoteSelect, onEdgeCreate, onEdgeDelete }: CanvasViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [localEdges, setLocalEdges] = useState<FlowEdge[]>(
     edges.map((edge) => ({

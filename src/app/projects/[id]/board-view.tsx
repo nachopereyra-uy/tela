@@ -19,7 +19,6 @@ type BoardNote = {
 
 type BoardViewProps = {
   notes: BoardNote[];
-  presentMode?: boolean;
   projectId: string;
   onNoteSelect?: (id: string) => void;
 };
@@ -40,7 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
   none: 'var(--ink-faint)',
 };
 
-export function BoardView({ notes, presentMode, projectId, onNoteSelect }: BoardViewProps) {
+export function BoardView({ notes, projectId, onNoteSelect }: BoardViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
   const notesByStatus = useMemo(() => {
