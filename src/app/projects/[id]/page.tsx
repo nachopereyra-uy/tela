@@ -7,6 +7,7 @@ import {
   type Note,
   type NoteLayer,
   type NoteStatus,
+  wikilinkEdges,
 } from "@/core";
 import { createClient } from "@/lib/supabase/server";
 import { listEdges } from "@/server/edges";
@@ -16,6 +17,7 @@ import { createNoteAction } from "./actions";
 import { BoardView } from "./board-view";
 import { CanvasView } from "./canvas-view";
 import { FunnelView } from "./funnel-view";
+import { GraphView } from "./graph-view";
 import { NoteInspector, type InspectorNote } from "./note-inspector";
 
 type ProjectPageProps = {
@@ -93,6 +95,7 @@ export default async function ProjectPage({
         title: note.title,
       }))
     : [];
+  const derivedWikilinkEdges = wikilinkEdges(coreNotes);
 
   return (
     <main className="grid min-h-screen grid-cols-[minmax(0,1fr)_420px] bg-slate-50">
@@ -157,6 +160,12 @@ export default async function ProjectPage({
           edges={explicitEdges}
           notes={notes}
           projectId={project.id}
+        />
+        <GraphView
+          explicitEdges={explicitEdges}
+          notes={notes}
+          projectId={project.id}
+          wikilinkEdges={derivedWikilinkEdges}
         />
       </section>
       <NoteInspector
