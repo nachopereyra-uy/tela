@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listNotes } from "@/server/notes";
 import { getProject } from "@/server/projects";
 import { createNoteAction } from "./actions";
+import { FunnelView } from "./funnel-view";
 import { NoteInspector, type InspectorNote } from "./note-inspector";
 
 type ProjectPageProps = {
@@ -108,6 +109,7 @@ export default async function ProjectPage({
             ))}
           </ul>
         )}
+        <FunnelView notes={notes} projectId={project.id} />
       </section>
       <NoteInspector
         note={selectedNote ? toInspectorNote(selectedNote) : null}
