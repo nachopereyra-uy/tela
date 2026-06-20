@@ -226,6 +226,34 @@ export async function createNoteAtPositionAction(formData: FormData) {
   redirect(`/projects/${projectId}?note=${note.id}`);
 }
 
+export async function createNoteOnCanvasAction(input: {
+  projectId: string;
+  x: number;
+  y: number;
+}) {
+  const userId = await getCurrentUserId();
+  const parsed = z.object({
+    projectId: z.string().uuid(),
+    x: z.number().int(),
+    y: z.number().int(),
+  }).parse(input);
+  const note = await createNote(userId, parsed.projectId, {
+    title: "Nueva nota",
+    x: parsed.x,
+    y: parsed.y,
+  });
+  if (!note) throw new Error("No se pudo crear la nota.");
+  revalidatePath(`/projects/${parsed.projectId}`);
+  return {
+    id: note.id,
+    title: note.title,
+    x: note.x,
+    y: note.y,
+    status: note.status,
+    layer: note.layer,
+  };
+}
+
 export async function moveNoteLayerAction(input: {
   projectId: string;
   noteId: string;

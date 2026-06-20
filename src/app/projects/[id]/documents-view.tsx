@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, useActionState, useEffect, useState } from "react";
+import { type MouseEvent, useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { backlinks, findByTitle, markdownToHtml, outgoingLinks, type NoteLayer, type NoteStatus } from "@/core";
 import type { ShellNote } from "./project-shell";
 import {
@@ -45,6 +45,29 @@ function toCoreNote(note: DocsNote) {
   };
 }
 
+// ── Toolbar button ─────────────────────────────────────────────────────────────
+
+function FmtBtn({
+  label,
+  title,
+  onInsert,
+}: {
+  label: string;
+  title: string;
+  onInsert: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onInsert}
+      className="flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-xs font-semibold text-ink-soft hover:bg-card hover:text-ink transition"
+    >
+      {label}
+    </button>
+  );
+}
+
 export function DocumentsView({
   notes,
   projectId,
@@ -59,6 +82,7 @@ export function DocumentsView({
     updateNoteAction,
     initialUpdateState,
   );
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId) ?? null;
   const [content, setContent] = useState(selectedNote?.content ?? "");
@@ -89,6 +113,30 @@ export function DocumentsView({
       )
     : notes;
 
+  // ── Format insertion ──────────────────────────────────────────────────────────
+
+  const insertFormat = useCallback(
+    (before: string, after: string) => {
+      const ta = textareaRef.current;
+      if (!ta || !selectedNote) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const selected = ta.value.slice(start, end);
+      const replacement = before + selected + after;
+      const newValue = ta.value.slice(0, start) + replacement + ta.value.slice(end);
+      ta.value = newValue;
+      // Restore cursor after inserted text
+      const newCursor = start + before.length + selected.length + after.length;
+      ta.setSelectionRange(newCursor - after.length, newCursor - after.length);
+      ta.focus();
+      setContent(newValue);
+      onNoteUpdate(selectedNote.id, { content: newValue });
+    },
+    [selectedNote, onNoteUpdate],
+  );
+
+  // ── Wikilink click in preview ─────────────────────────────────────────────────
+
   function handlePreviewClick(event: MouseEvent<HTMLDivElement>) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
@@ -105,6 +153,19 @@ export function DocumentsView({
       return;
     }
     setMissingWikilink(title);
+  }
+
+  // ── Export current note as .md ────────────────────────────────────────────────
+
+  function handleExportMd() {
+    if (!selectedNote) return;
+    const blob = new Blob([`# ${selectedNote.title}\n\n${content}`], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedNote.title.replace(/[^a-z0-9]/gi, "-").toLowerCase() || "nota"}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -172,7 +233,7 @@ export function DocumentsView({
             <input name="tags" type="hidden" value={selectedNote.tags.join(", ")} />
 
             {/* Title */}
-            <div className="border-b border-line px-6 py-4">
+            <div className="border-b border-line px-6 py-3">
               <input
                 key={selectedNote.id + "-title"}
                 name="title"
@@ -184,7 +245,7 @@ export function DocumentsView({
                 onChange={(e) => onNoteUpdate(selectedNote.id, { title: e.target.value })}
               />
               {selectedNote.tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
+                <div className="mt-1.5 flex flex-wrap gap-1">
                   {selectedNote.tags.map((tag) => (
                     <span key={tag} className="rounded-pill bg-blue-soft px-2 py-0.5 text-xs font-semibold text-blue">
                       {tag}
@@ -196,12 +257,30 @@ export function DocumentsView({
 
             {/* Editor + Preview split */}
             <div className="flex flex-1 overflow-hidden">
-              {/* Textarea */}
+              {/* Textarea with toolbar */}
               <div className="flex flex-1 flex-col border-r border-line overflow-hidden">
-                <p className="shrink-0 px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                  Contenido
+                {/* Formatting toolbar */}
+                <div className="shrink-0 flex items-center gap-0.5 border-b border-line px-2 py-1 bg-paper-2">
+                  <FmtBtn label="B" title="Negrita (Ctrl+B)" onInsert={() => insertFormat("**", "**")} />
+                  <FmtBtn label="I" title="Cursiva (Ctrl+I)" onInsert={() => insertFormat("_", "_")} />
+                  <div className="h-4 w-px bg-line mx-0.5" />
+                  <FmtBtn label="H1" title="Encabezado 1" onInsert={() => insertFormat("# ", "")} />
+                  <FmtBtn label="H2" title="Encabezado 2" onInsert={() => insertFormat("## ", "")} />
+                  <FmtBtn label="H3" title="Encabezado 3" onInsert={() => insertFormat("### ", "")} />
+                  <div className="h-4 w-px bg-line mx-0.5" />
+                  <FmtBtn label="—" title="Lista con viñetas" onInsert={() => insertFormat("- ", "")} />
+                  <FmtBtn label="1." title="Lista numerada" onInsert={() => insertFormat("1. ", "")} />
+                  <div className="h-4 w-px bg-line mx-0.5" />
+                  <FmtBtn label="`·`" title="Código en línea" onInsert={() => insertFormat("`", "`")} />
+                  <FmtBtn label="```" title="Bloque de código" onInsert={() => insertFormat("```\n", "\n```")} />
+                  <div className="h-4 w-px bg-line mx-0.5" />
+                  <FmtBtn label="[[·]]" title="Enlace a nota" onInsert={() => insertFormat("[[", "]]")} />
+                </div>
+                <p className="shrink-0 px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                  Markdown
                 </p>
                 <textarea
+                  ref={textareaRef}
                   key={selectedNote.id + "-content"}
                   name="content"
                   defaultValue={selectedNote.content}
@@ -216,7 +295,7 @@ export function DocumentsView({
 
               {/* Preview */}
               <div className="flex w-[45%] shrink-0 flex-col overflow-hidden">
-                <p className="shrink-0 px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                <p className="shrink-0 px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-faint">
                   Vista previa
                 </p>
                 <div
@@ -242,12 +321,12 @@ export function DocumentsView({
               </div>
             </div>
 
-            {/* Footer: save + links */}
-            <div className="shrink-0 border-t border-line px-4 py-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 text-xs text-ink-faint">
+            {/* Footer: save + links + export */}
+            <div className="shrink-0 border-t border-line px-4 py-2.5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 text-xs text-ink-faint min-w-0 overflow-hidden">
                 {computedOutgoing.length > 0 && (
-                  <span>
-                    Enlaza a:{" "}
+                  <span className="shrink-0">
+                    Enlaza:{" "}
                     {computedOutgoing.map((l, i) => (
                       <span key={l.title}>
                         {i > 0 && ", "}
@@ -267,8 +346,8 @@ export function DocumentsView({
                   </span>
                 )}
                 {computedBacklinks.length > 0 && (
-                  <span>
-                    Le enlazan:{" "}
+                  <span className="shrink-0">
+                    ←{" "}
                     {computedBacklinks.map((l, i) => (
                       <span key={l.id}>
                         {i > 0 && ", "}
@@ -284,16 +363,26 @@ export function DocumentsView({
                   </span>
                 )}
               </div>
-              {updateState.error && (
-                <p className="text-xs text-red-600">{updateState.error}</p>
-              )}
-              <button
-                type="submit"
-                disabled={updatePending}
-                className="shrink-0 h-8 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep disabled:opacity-50"
-              >
-                {updatePending ? "Guardando…" : "Guardar"}
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {updateState.error && (
+                  <p className="text-xs text-red-600">{updateState.error}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleExportMd}
+                  className="h-8 rounded-btn border border-line px-3 text-xs font-medium text-ink-soft hover:bg-card hover:text-ink transition"
+                  title="Descargar como Markdown"
+                >
+                  ↓ .md
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatePending}
+                  className="h-8 rounded-btn bg-blue px-4 text-sm font-semibold text-white transition hover:bg-blue-deep disabled:opacity-50"
+                >
+                  {updatePending ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
             </div>
           </form>
         </div>
