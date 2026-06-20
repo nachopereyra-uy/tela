@@ -67,7 +67,14 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp(credentials.data);
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://tela-pi.vercel.app";
+  const { data, error } = await supabase.auth.signUp({
+    ...credentials.data,
+    options: {
+      emailRedirectTo: `${siteUrl}/auth/callback`,
+    },
+  });
 
   if (error) {
     return { error: "No pudimos crear la cuenta con esos datos." };
