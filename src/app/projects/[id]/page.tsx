@@ -1,5 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import {
+  backlinks,
+  findByTitle,
+  outgoingLinks,
+  type Note,
+  type NoteLayer,
+  type NoteStatus,
+} from "@/core";
 import { createClient } from "@/lib/supabase/server";
 import { listNotes } from "@/server/notes";
 import { getProject } from "@/server/projects";
@@ -28,6 +36,22 @@ function toInspectorNote(note: Awaited<ReturnType<typeof listNotes>>[number]) {
   } satisfies InspectorNote;
 }
 
+function toCoreNote(note: Awaited<ReturnType<typeof listNotes>>[number]): Note {
+  return {
+    id: note.id,
+    projectId: note.projectId,
+    title: note.title,
+    content: note.content,
+    status: note.status as NoteStatus,
+    layer: note.layer as NoteLayer,
+    x: note.x,
+    y: note.y,
+    tags: note.tags,
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+  };
+}
+
 export default async function ProjectPage({
   params,
   searchParams,
@@ -52,6 +76,20 @@ export default async function ProjectPage({
   const notes = await listNotes(user.id, id);
   const selectedNote =
     notes.find((note) => note.id === selectedNoteId) ?? notes[0] ?? null;
+  const coreNotes = notes.map(toCoreNote);
+  const selectedCoreNote = selectedNote ? toCoreNote(selectedNote) : null;
+  const selectedOutgoingLinks = selectedCoreNote
+    ? outgoingLinks(selectedCoreNote.content).map((title) => ({
+        title,
+        noteId: findByTitle(coreNotes, title)?.id ?? null,
+      }))
+    : [];
+  const selectedBacklinks = selectedCoreNote
+    ? backlinks(selectedCoreNote, coreNotes).map((note) => ({
+        id: note.id,
+        title: note.title,
+      }))
+    : [];
 
   return (
     <main className="grid min-h-screen grid-cols-[minmax(0,1fr)_420px] bg-slate-50">
@@ -114,7 +152,9 @@ export default async function ProjectPage({
         <BoardView notes={notes} projectId={project.id} />
       </section>
       <NoteInspector
+        backlinks={selectedBacklinks}
         note={selectedNote ? toInspectorNote(selectedNote) : null}
+        outgoingLinks={selectedOutgoingLinks}
         projectId={project.id}
         wikilinkTargets={notes.map((note) => ({
           id: note.id,

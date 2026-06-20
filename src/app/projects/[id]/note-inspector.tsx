@@ -31,6 +31,14 @@ type NoteInspectorProps = {
     id: string;
     title: string;
   }>;
+  outgoingLinks: Array<{
+    title: string;
+    noteId: string | null;
+  }>;
+  backlinks: Array<{
+    id: string;
+    title: string;
+  }>;
 };
 
 const initialState: NoteActionState = {};
@@ -53,6 +61,8 @@ function normalizeTitle(title: string) {
 }
 
 export function NoteInspector({
+  backlinks,
+  outgoingLinks,
   projectId,
   note,
   wikilinkTargets,
@@ -237,6 +247,52 @@ export function NoteInspector({
             name="tags"
           />
         </div>
+        <section className="grid gap-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Enlaces salientes
+            </h3>
+            {outgoingLinks.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-600">Sin enlaces.</p>
+            ) : (
+              <ul className="mt-2 grid gap-1">
+                {outgoingLinks.map((link) => (
+                  <li className="text-sm" key={link.title}>
+                    {link.noteId ? (
+                      <a
+                        className="font-medium text-indigo-700"
+                        href={`/projects/${projectId}?note=${link.noteId}`}
+                      >
+                        {link.title}
+                      </a>
+                    ) : (
+                      <span className="text-slate-600">{link.title}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Backlinks</h3>
+            {backlinks.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-600">Sin backlinks.</p>
+            ) : (
+              <ul className="mt-2 grid gap-1">
+                {backlinks.map((link) => (
+                  <li className="text-sm" key={link.id}>
+                    <a
+                      className="font-medium text-indigo-700"
+                      href={`/projects/${projectId}?note=${link.id}`}
+                    >
+                      {link.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
         {updateState.error ? (
           <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {updateState.error}
