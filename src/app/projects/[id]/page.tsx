@@ -9,6 +9,7 @@ import {
   type NoteStatus,
 } from "@/core";
 import { createClient } from "@/lib/supabase/server";
+import { listEdges } from "@/server/edges";
 import { listNotes } from "@/server/notes";
 import { getProject } from "@/server/projects";
 import { createNoteAction } from "./actions";
@@ -75,6 +76,7 @@ export default async function ProjectPage({
   }
 
   const notes = await listNotes(user.id, id);
+  const explicitEdges = await listEdges(user.id, id);
   const selectedNote =
     notes.find((note) => note.id === selectedNoteId) ?? notes[0] ?? null;
   const coreNotes = notes.map(toCoreNote);
@@ -151,7 +153,11 @@ export default async function ProjectPage({
         )}
         <FunnelView notes={notes} projectId={project.id} />
         <BoardView notes={notes} projectId={project.id} />
-        <CanvasView notes={notes} projectId={project.id} />
+        <CanvasView
+          edges={explicitEdges}
+          notes={notes}
+          projectId={project.id}
+        />
       </section>
       <NoteInspector
         backlinks={selectedBacklinks}

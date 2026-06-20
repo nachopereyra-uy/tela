@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { NOTE_LAYERS, NOTE_STATUSES } from "@/core";
 import { createClient } from "@/lib/supabase/server";
+import { createEdge, deleteEdge } from "@/server/edges";
 import { createNote, deleteNote, updateNote } from "@/server/notes";
 
 export type NoteActionState = {
@@ -43,6 +44,17 @@ const moveNotePositionSchema = z.object({
   noteId: z.string().uuid(),
   x: z.number().int(),
   y: z.number().int(),
+});
+
+const createCanvasEdgeSchema = z.object({
+  projectId: z.string().uuid(),
+  fromNoteId: z.string().uuid(),
+  toNoteId: z.string().uuid(),
+});
+
+const deleteCanvasEdgeSchema = z.object({
+  projectId: z.string().uuid(),
+  edgeId: z.string().uuid(),
 });
 
 async function getCurrentUserId() {
@@ -233,6 +245,47 @@ export async function moveNotePositionAction(input: {
 
   if (!note) {
     throw new Error("No pudimos mover la nota.");
+  }
+
+  revalidatePath(`/projects/${parsed.projectId}`);
+}
+
+export async function createCanvasEdgeAction(input: {
+  projectId: string;
+  fromNoteId: string;
+  toNoteId: string;
+}) {
+  const userId = await getCurrentUserId();
+  const parsed = createCanvasEdgeSchema.parse(input);
+  const edge = await createEdge(
+    userId,
+    parsed.projectId,
+    parsed.fromNoteId,
+    parsed.toNoteId,
+  );
+
+  if (!edge) {
+    throw new Error("No pudimos crear la conexion.");
+  }
+
+  revalidatePath(`/projects/${parsed.projectId}`);
+  return {
+    id: edge.id,
+    fromNoteId: edge.fromNoteId,
+    toNoteId: edge.toNoteId,
+  };
+}
+
+export async function deleteCanvasEdgeAction(input: {
+  projectId: string;
+  edgeId: string;
+}) {
+  const userId = await getCurrentUserId();
+  const parsed = deleteCanvasEdgeSchema.parse(input);
+  const edge = await deleteEdge(userId, parsed.projectId, parsed.edgeId);
+
+  if (!edge) {
+    throw new Error("No pudimos borrar la conexion.");
   }
 
   revalidatePath(`/projects/${parsed.projectId}`);

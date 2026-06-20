@@ -50,7 +50,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 ## Etapa 6 · Lienzo y grafo
 
 - [x] **T6.1 — Lienzo (React Flow).** Nodos posicionables, pan y zoom. *Hecho cuando:* la posición persiste.
-- [ ] **T6.2 — Conexiones.** Crear y borrar; persistir en `edges`. *Hecho cuando:* sobreviven a recarga.
+- [x] **T6.2 — Conexiones.** Crear y borrar; persistir en `edges`. *Hecho cuando:* sobreviven a recarga.
 - [ ] **T6.3 — Grafo.** Nodos + aristas (conexiones y wikilinks); clic lleva al documento. *Hecho cuando:* se ven ambos tipos y navega.
 
 ## Etapa 7 · Pulido
