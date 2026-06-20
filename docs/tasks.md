@@ -33,7 +33,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 ## Etapa 3 · Embudo
 
 - [x] **T3.1 — Render del embudo.** 6 capas con número, nombre, pregunta y sus notas. *Hecho cuando:* se ven las 6 capas con las notas correctas.
-- [ ] **T3.2 — Mover entre capas.** Arrastrar cambia `layer` y persiste. *Hecho cuando:* sobrevive a recarga.
+- [x] **T3.2 — Mover entre capas.** Arrastrar cambia `layer` y persiste. *Hecho cuando:* sobrevive a recarga.
 - [ ] **T3.3 — Añadir en una capa.** Botón por capa que crea nota asignada. *Hecho cuando:* aparece en esa capa.
 
 ## Etapa 4 · Tablero

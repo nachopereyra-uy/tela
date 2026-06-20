@@ -26,6 +26,12 @@ const noteDeleteSchema = z.object({
   noteId: z.string().uuid(),
 });
 
+const moveNoteLayerSchema = z.object({
+  projectId: z.string().uuid(),
+  noteId: z.string().uuid(),
+  layer: z.enum(NOTE_LAYERS),
+});
+
 async function getCurrentUserId() {
   const supabase = await createClient();
   const {
@@ -123,4 +129,22 @@ export async function deleteNoteAction(
 
   revalidatePath(`/projects/${parsed.data.projectId}`);
   redirect(`/projects/${parsed.data.projectId}`);
+}
+
+export async function moveNoteLayerAction(input: {
+  projectId: string;
+  noteId: string;
+  layer: string;
+}) {
+  const userId = await getCurrentUserId();
+  const parsed = moveNoteLayerSchema.parse(input);
+  const note = await updateNote(userId, parsed.projectId, parsed.noteId, {
+    layer: parsed.layer,
+  });
+
+  if (!note) {
+    throw new Error("No pudimos mover la nota.");
+  }
+
+  revalidatePath(`/projects/${parsed.projectId}`);
 }
