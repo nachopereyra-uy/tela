@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   DndContext,
   type DragEndEvent,
@@ -37,6 +37,11 @@ const LAYER_GRADIENT = `linear-gradient(to bottom, var(--l-marketing), var(--l-v
 export function FunnelView({ notes, presentMode, projectId, onNoteSelect }: FunnelViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
+
+  // Sync when parent re-renders after router.refresh()
+  useEffect(() => {
+    setLocalNotes(notes);
+  }, [notes]);
   const notesByLayer = useMemo(() => {
     const grouped = new Map<NoteLayer, FunnelNote[]>();
 

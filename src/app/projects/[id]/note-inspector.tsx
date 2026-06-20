@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { LAYERS, markdownToHtml, NOTE_LAYERS, NOTE_STATUSES } from "@/core";
 import type { ShellNote } from "./project-shell";
 import {
@@ -85,6 +86,7 @@ export function NoteInspector({
   onNoteNavigate,
   deleteRef,
 }: NoteInspectorProps) {
+  const router = useRouter();
   const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const [tab, setTab] = useState<Tab>("info");
   const [content, setContent] = useState(note?.content ?? "");
@@ -107,6 +109,15 @@ export function NoteInspector({
     deleteRef.current = () => deleteDialogRef.current?.showModal();
     return () => { deleteRef.current = null; };
   }, [deleteRef]);
+
+  // Refresh RSC data after successful save
+  const prevUpdatePending = useRef(false);
+  useEffect(() => {
+    if (prevUpdatePending.current && !updatePending && !updateState.error) {
+      router.refresh();
+    }
+    prevUpdatePending.current = updatePending;
+  }, [updatePending, updateState.error, router]);
 
   const prevDeletePending = useRef(false);
   useEffect(() => {
@@ -145,14 +156,6 @@ export function NoteInspector({
 
   return (
     <>
-      {isOpen && (
-        <div
-          className="absolute inset-0 z-30"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
-
       <aside
         className={`absolute right-0 top-0 bottom-0 z-40 flex flex-col border-l border-line bg-paper overflow-hidden transition-transform duration-200 ease-in-out ${
           isOpen ? "translate-x-0" : "translate-x-full"

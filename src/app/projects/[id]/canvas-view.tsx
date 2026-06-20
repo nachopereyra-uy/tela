@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Background,
   BackgroundVariant,
@@ -129,12 +130,22 @@ function NoteNode({ data, selected }: NodeProps & { data: NoteNodeData }) {
 function CanvasToolbar({
   mode,
   onModeChange,
+  onCreateNote,
 }: {
   mode: CanvasMode;
   onModeChange: (m: CanvasMode) => void;
+  onCreateNote: (x: number, y: number) => void;
 }) {
   const { zoom } = useViewport();
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
+
+  function handleCreateNote() {
+    const container = document.querySelector(".react-flow");
+    if (!container) { onCreateNote(100, 100); return; }
+    const rect = container.getBoundingClientRect();
+    const pos = screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    onCreateNote(Math.round(pos.x), Math.round(pos.y));
+  }
 
   return (
     <Panel position="top-left">
@@ -169,6 +180,21 @@ function CanvasToolbar({
             <path d="M7 1v2M3.5 2.5l1.4 1.4M2 6H1m1.5 3.5 1.4-1.4M7 11v2m3.5-1.5-1.4-1.4M12 6h1m-2.5-3.5L9.1 3.9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
             <path d="M5 6c0-1.1.9-2 2-2s2 .9 2 2v3.5c0 .3-.2.5-.5.5h-3c-.3 0-.5-.2-.5-.5V6z" stroke="currentColor" strokeWidth="1.3" />
           </svg>
+        </button>
+
+        <div className="h-5 w-px bg-line mx-0.5" />
+
+        {/* Create note */}
+        <button
+          type="button"
+          title="Nueva nota (doble clic en el lienzo)"
+          onClick={handleCreateNote}
+          className="flex h-7 items-center gap-1 rounded px-2 text-xs font-semibold text-ink-soft hover:bg-paper-2 hover:text-ink transition"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          Nota
         </button>
 
         <div className="h-5 w-px bg-line mx-0.5" />
@@ -209,6 +235,7 @@ function CanvasHint() {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function CanvasView({ edges, notes, projectId, onNoteSelect, onEdgeCreate, onEdgeDelete }: CanvasViewProps) {
+  const router = useRouter();
   const [localNotes, setLocalNotes] = useState(notes);
   const [localEdges, setLocalEdges] = useState<FlowEdge[]>(
     edges.map((edge) => ({
@@ -220,6 +247,11 @@ export function CanvasView({ edges, notes, projectId, onNoteSelect, onEdgeCreate
   const [mode, setMode] = useState<CanvasMode>("select");
   const [, startTransition] = useTransition();
   const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
+
+  // Sync when parent re-renders after router.refresh()
+  useEffect(() => {
+    setLocalNotes(notes);
+  }, [notes]);
 
   const nodeTypes = useMemo(() => ({ note: NoteNode }), []);
 
@@ -295,16 +327,7 @@ export function CanvasView({ edges, notes, projectId, onNoteSelect, onEdgeCreate
     }
   }
 
-  function handleDoubleClick(event: React.MouseEvent) {
-    const target = event.target as Element;
-    // Only create on pane double-click (not on nodes or edges)
-    if (target.closest('.react-flow__node') || target.closest('.react-flow__edge')) return;
-    const rf = rfInstanceRef.current;
-    if (!rf) return;
-    const pos = rf.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-    const x = Math.round(pos.x);
-    const y = Math.round(pos.y);
-
+  function createNoteAt(x: number, y: number) {
     startTransition(async () => {
       try {
         const note = await createNoteOnCanvasAction({ projectId, x, y });
@@ -318,10 +341,20 @@ export function CanvasView({ edges, notes, projectId, onNoteSelect, onEdgeCreate
         };
         setLocalNotes((current) => [...current, newNote]);
         onNoteSelect?.(note.id);
+        router.refresh();
       } catch {
         // silent: note appears on next RSC refresh
       }
     });
+  }
+
+  function handleDoubleClick(event: React.MouseEvent) {
+    const target = event.target as Element;
+    if (target.closest('.react-flow__node') || target.closest('.react-flow__edge')) return;
+    const rf = rfInstanceRef.current;
+    if (!rf) return;
+    const pos = rf.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    createNoteAt(Math.round(pos.x), Math.round(pos.y));
   }
 
   return (
@@ -345,7 +378,7 @@ export function CanvasView({ edges, notes, projectId, onNoteSelect, onEdgeCreate
           <Background variant={BackgroundVariant.Dots} gap={24} size={1.1} color="var(--line-strong)" />
           <Controls />
           <MiniMap pannable zoomable />
-          <CanvasToolbar mode={mode} onModeChange={setMode} />
+          <CanvasToolbar mode={mode} onModeChange={setMode} onCreateNote={createNoteAt} />
           <CanvasHint />
         </ReactFlow>
       </div>

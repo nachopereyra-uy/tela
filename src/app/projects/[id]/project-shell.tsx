@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   backlinks,
   findByTitle,
@@ -10,7 +11,6 @@ import {
   type NoteStatus,
   type Note,
 } from "@/core";
-import { createNoteAction } from "./actions";
 import { BoardView } from "./board-view";
 import { CanvasView } from "./canvas-view";
 import { FunnelView } from "./funnel-view";
@@ -135,6 +135,7 @@ export function ProjectShell({
   initialNoteId,
 }: ProjectShellProps) {
   const { activeView, setActiveView, setNoteCount, setConnectionCount } = useProjectContext();
+  const router = useRouter();
 
   const [localNotes, setLocalNotes] = useState<ShellNote[]>(initialNotes);
   const [localEdges, setLocalEdges] = useState<ShellEdge[]>(initialEdges);
@@ -197,6 +198,7 @@ export function ProjectShell({
     );
     setSelectedNoteId(null);
     setInspectorOpen(false);
+    router.refresh();
   }
 
   function handleEdgeCreate(edge: ShellEdge) {
@@ -306,17 +308,6 @@ export function ProjectShell({
           onChange={(e) => setSearch(e.target.value)}
           className="h-8 w-48 rounded-btn border border-line bg-paper px-3 text-sm placeholder:text-ink-faint focus:border-blue focus:bg-card focus:outline-none focus:ring-2 focus:ring-blue-soft transition"
         />
-        <div className="ml-auto flex items-center gap-2">
-          <form action={createNoteAction}>
-            <input type="hidden" name="projectId" value={project.id} />
-            <button
-              type="submit"
-              className="h-8 rounded-btn bg-blue px-3 text-sm font-semibold text-white transition hover:bg-blue-deep"
-            >
-              + Nueva nota
-            </button>
-          </form>
-        </div>
       </header>
 
       {/* Stage */}

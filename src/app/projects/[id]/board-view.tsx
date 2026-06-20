@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   DndContext,
   type DragEndEvent,
@@ -42,6 +42,10 @@ const STATUS_COLORS: Record<string, string> = {
 export function BoardView({ notes, projectId, onNoteSelect }: BoardViewProps) {
   const [localNotes, setLocalNotes] = useState(notes);
   const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setLocalNotes(notes);
+  }, [notes]);
   const notesByStatus = useMemo(() => {
     const grouped = new Map<NoteStatus, BoardNote[]>();
 
