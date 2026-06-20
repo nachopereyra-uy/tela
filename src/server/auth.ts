@@ -44,7 +44,13 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword(credentials.data);
 
   if (error) {
-    return { error: "No pudimos iniciar sesion con esos datos." };
+    if (error.code === "email_not_confirmed") {
+      return {
+        error:
+          "Debés confirmar tu email antes de iniciar sesión. Revisá tu bandeja de entrada.",
+      };
+    }
+    return { error: "Email o contraseña incorrectos." };
   }
 
   redirect("/projects");
@@ -61,13 +67,20 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp(credentials.data);
+  const { data, error } = await supabase.auth.signUp(credentials.data);
 
   if (error) {
     return { error: "No pudimos crear la cuenta con esos datos." };
   }
 
-  redirect("/projects");
+  if (data.session) {
+    redirect("/projects");
+  }
+
+  return {
+    error:
+      "Cuenta creada. Revisá tu email para confirmar tu cuenta y luego iniciá sesión.",
+  };
 }
 
 export async function signOut() {
