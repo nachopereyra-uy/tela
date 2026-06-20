@@ -24,7 +24,7 @@ Leyenda: `- [ ]` pendiente · `- [x]` hecha.
 
 ## Etapa 2 · core y notas
 
-- [ ] **T2.1 — `core/layers` y `core/types`.** 6 capas con preguntas y tipos `Note`/`Edge`/`Project`/estados. *Hecho cuando:* compila en estricto.
+- [x] **T2.1 — `core/layers` y `core/types`.** 6 capas con preguntas y tipos `Note`/`Edge`/`Project`/estados. *Hecho cuando:* compila en estricto.
 - [ ] **T2.2 — `core/notes` con tests.** `outgoingLinks`, `findByTitle`, `backlinks`, `wikilinkEdges` + Vitest. *Hecho cuando:* tests en verde.
 - [ ] **T2.3 — `core/markdown` con tests.** `markdownToHtml` (títulos, negrita, listas, código, `[[ ]]`, escape) + tests, incluido el de no-inyección. *Hecho cuando:* tests en verde.
 - [ ] **T2.4 — Datos de notas.** `listNotes`, `createNote`, `updateNote`, `deleteNote` (borra sus edges), validando propiedad. *Hecho cuando:* CRUD respeta autorización.
